@@ -11,9 +11,12 @@ __pycache__/
 # VSCode
 .vscode/
 
+
 # Docker
 *.log
-docker/postgres/
+# Do not ignore init scripts for postgres
+!docker/postgres/docker-entrypoint-initdb.d/
+!docker/postgres/docker-entrypoint-initdb.d/*.sql
 
 # Node
 node_modules/
