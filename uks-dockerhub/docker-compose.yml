@@ -1,0 +1,36 @@
+version: '3.9'
+
+services:
+  backend:
+    build: ./docker/backend
+    env_file:
+      - .env.example
+    depends_on:
+      - postgres
+      - redis
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build: ./docker/frontend
+    volumes:
+      - ./frontend:/app
+    depends_on:
+      - backend
+    ports:
+      - "8080:8080"
+
+  # elasticsearch:
+  #   image: docker.elastic.co/elasticsearch/elasticsearch:8.11.1
+  #   environment:
+  #     - discovery.type=single-node
+  #   ports:
+  #     - "9200:9200"
+  #   volumes:
+  #     - esdata:/usr/share/elasticsearch/data
+
+volumes:
+  postgres_data:
+  # esdata:
