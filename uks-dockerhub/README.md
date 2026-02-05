@@ -4,15 +4,15 @@ This project is a simplified DockerHub-like web application for managing Docker 
 
 ## Architecture
 
-- **Backend:** Django + Django REST Framework
-- **Frontend:** Django templates
+- **Backend:** Django + Django REST Framework (serves both API and HTML pages)
+- **Templates:** Django templates (integrated in backend)
 - **Database:** PostgreSQL
 - **Cache:** Redis
 - **Reverse Proxy:** NGINX
 - **Orchestration:** Docker Compose
 - **CI/CD:** Placeholder configuration
 
-Project is clearly separated into backend and frontend, containerized, and ready for CI/CD.
+All frontend (templates, views, static) is now part of the backend Django app. There is no separate frontend service or container.
 
 ## Environment Setup (.env)
 
@@ -43,11 +43,22 @@ Before running the application, you must create a `.env` file in the project roo
 ## Local Development (Docker Compose)
 
 1. Copy `.env.example` to `.env` and fill in required values.
-2. Run:
+2. Start all services (builds images if needed):
+    ```sh
+    docker compose up --build
+    ```
+3. Access the application at http://localhost:8000 (API and HTML pages)
+
+### How to Run & Migrate
+
+- To start the application:
    ```sh
-   docker-compose up --build
+   docker compose up --build
    ```
-3. Access backend at http://localhost:8000, frontend at http://localhost:8080
+- If you need to apply Django migrations (after changing models, or first run):
+   ```sh
+   docker compose exec backend python manage.py migrate
+   ```
 
 ### Database Initialization
 
