@@ -53,6 +53,10 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
+
+# Use custom user model
+AUTH_USER_MODEL = 'users.User'
+
 # Database placeholder (override in docker/local/production)
 DATABASES = {}
 
