@@ -12,7 +12,7 @@ This document describes the high-level architecture of the project.
 ## Folder Structure
 
 - backend/ - Django project and apps
-- frontend/ - Templates and static files
+	- frontend/ - Django templates, views, static (HTML pages)
 - docker/ - Dockerfiles and configs
 - docs/ - Documentation
 - scripts/ - Utility scripts
