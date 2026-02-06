@@ -6,6 +6,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Registration{% endblock %}</title>
     <style>
+        .logout-link {
+            position: fixed;
+            top: 32px;
+            right: 48px;
+            z-index: 2000;
+        }
+        .logout-link a {
+            color: #2d3a4b;
+            background: #f5f7fa;
+            border: 1px solid #b0b0b0;
+            border-radius: 6px;
+            padding: 7px 18px;
+            font-weight: 500;
+            text-decoration: none;
+            font-size: 1rem;
+            transition: background 0.2s;
+        }
+        .logout-link a:hover {
+            background: #e0eafc;
+        }
+    </style>
+    <style>
         body {
             min-height: 100vh;
             background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
@@ -83,7 +105,12 @@
     </style>
     {% block extra_head %}{% endblock %}
 </head>
-<body>
+    <body>
+        {% if request.user.is_authenticated %}
+        <div class="logout-link">
+            <a href="{% url 'logout' %}">Logout</a>
+        </div>
+        {% endif %}
     {% block content %}{% endblock %}
 </body>
 </html>

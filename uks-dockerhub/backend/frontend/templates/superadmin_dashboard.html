@@ -47,6 +47,46 @@
                 {% endfor %}
             </tbody>
         </table>
+        <hr style="margin:2.5rem 0 1.5rem 0; border:none; border-top:1px solid #e0e0e0;">
+        <h3>Add new admin</h3>
+        <form method="post" style="margin-top:1.5rem; text-align:left;" autocomplete="off">
+            {% csrf_token %}
+            <input type="hidden" name="add_admin" value="1">
+            <div style="display:flex; gap:1rem; flex-wrap:wrap; margin-bottom:0.5rem;">
+                <div style="flex:1 1 180px; margin-bottom:0.5rem;">
+                    <label>First name</label><br>
+                    <input type="text" name="first_name" value="{{ admin_form.first_name.value|default:'' }}" style="padding:6px 10px; border-radius:6px; border:1px solid #b0b0b0;">
+                </div>
+                <div style="flex:1 1 180px; margin-bottom:0.5rem;">
+                    <label>Last name</label><br>
+                    <input type="text" name="last_name" value="{{ admin_form.last_name.value|default:'' }}" style="padding:6px 10px; border-radius:6px; border:1px solid #b0b0b0;">
+                </div>
+            </div>
+            <div style="display:flex; gap:1rem; flex-wrap:wrap; margin-bottom:0.5rem;">
+                <div style="flex:1 1 180px; margin-bottom:0.5rem;">
+                    <label>Username</label><br>
+                    <input type="text" name="username" value="{{ admin_form.username.value|default:'' }}" style="padding:6px 10px; border-radius:6px; border:1px solid #b0b0b0;">
+                </div>
+                <div style="flex:1 1 180px; margin-bottom:0.5rem;">
+                    <label>Email</label><br>
+                    <input type="email" name="email" value="{{ admin_form.email.value|default:'' }}" style="padding:6px 10px; border-radius:6px; border:1px solid #b0b0b0;">
+                </div>
+            </div>
+            <div style="display:flex; gap:1rem; flex-wrap:wrap; margin-bottom:0.5rem;">
+                <div style="flex:1 1 180px; margin-bottom:0.5rem;">
+                    <label>Password</label><br>
+                    <input type="password" name="password1" style="padding:6px 10px; border-radius:6px; border:1px solid #b0b0b0;">
+                </div>
+                <div style="flex:1 1 180px; margin-bottom:0.5rem;">
+                    <label>Repeat password</label><br>
+                    <input type="password" name="password2" style="padding:6px 10px; border-radius:6px; border:1px solid #b0b0b0;">
+                </div>
+            </div>
+            {% if admin_form_error %}
+                <div style="color:#b00; margin-top:1rem;">{{ admin_form_error|linebreaksbr }}</div>
+            {% endif %}
+            <button type="submit" style="margin-top:1.5rem; padding:8px 32px; border-radius:6px; border:none; background:#6d93f7; color:#fff; font-weight:600; font-size:1rem; cursor:pointer;">Add admin</button>
+        </form>
     </div>
 </div>
 <div id="overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(220,230,250,0.6); backdrop-filter: blur(4px); z-index:999;"></div>

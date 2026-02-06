@@ -1,3 +1,8 @@
+from django.contrib.auth import logout
+# Logout view
+def logout_view(request):
+    logout(request)
+    return redirect('login')
 from users.permissions import superadmin_required
 from django.http import JsonResponse, HttpResponseForbidden
 from django.views.decorators.csrf import csrf_exempt
@@ -34,7 +39,6 @@ def login_view(request):
                 error = "Invalid username or password."
         else:
             error = "Invalid username or password."
-        form = CustomLoginForm()
     else:
         form = CustomLoginForm()
     return render(request, 'login.html', {'form': form, 'error': error})
@@ -92,7 +96,26 @@ def block_user_view(request, user_id):
 def superadmin_dashboard_view(request):
     users = User.objects.filter(role='user')
     admins = User.objects.filter(role='admin')
-    return render(request, 'superadmin_dashboard.html', {'users': users, 'admins': admins})
+    admin_form_error = None
+    if request.method == 'POST' and 'add_admin' in request.POST:
+        # Dodavanje novog admina
+        form = CustomUserCreationForm(request.POST)
+        if form.is_valid():
+            new_admin = form.save(commit=False)
+            new_admin.role = 'admin'
+            new_admin.is_active = True
+            new_admin.save()
+            return redirect('superadmin-dashboard')
+        else:
+            admin_form_error = form.errors.as_text()
+    else:
+        form = CustomUserCreationForm()
+    return render(request, 'superadmin_dashboard.html', {
+        'users': users,
+        'admins': admins,
+        'admin_form': form,
+        'admin_form_error': admin_form_error,
+    })
 
 @superadmin_required
 def superadmin_user_details_view(request, user_id):
