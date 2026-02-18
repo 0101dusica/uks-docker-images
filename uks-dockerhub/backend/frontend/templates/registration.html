@@ -39,6 +39,10 @@
             {% for error in form.password2.errors %}<div class="errorlist">{{ error }}</div>{% endfor %}
         </div>
         <button type="submit" class="submit-btn">Register</button>
+        <div style="text-align:center; margin-top:1rem;">
+            <span>Already have an account?</span>
+            <a href="/login/" style="color:#5b7be6; font-weight:500; text-decoration:none; margin-left:0.5rem;">Log in</a>
+        </div>
     </form>
 </div>
 {% endblock %}
