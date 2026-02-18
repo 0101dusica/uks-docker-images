@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard{% endblock %}
+{% block content %}
+<div class="form-box" style="min-width:600px;">
+    <h2 style="margin-bottom: 2rem;">Users</h2>
+    <table style="width:100%; border-collapse:collapse;">
+        <thead>
+            <tr>
+                <th style="text-align:left; padding: 8px 12px;">Username</th>
+                <th style="text-align:left; padding: 8px 12px;">Email</th>
+                <th style="text-align:center; padding: 8px 12px;">Status</th>
+                <th style="text-align:center; padding: 8px 12px;">Details</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td style="text-align:left; padding: 8px 12px;">{{ user.username }}</td>
+                <td style="text-align:left; padding: 8px 12px;">{{ user.email }}</td>
+                <td style="text-align:center; padding: 8px 12px;">{% if user.is_active %}Active{% else %}Blocked{% endif %}</td>
+                <td style="text-align:center; padding: 8px 12px;"><button onclick="showUserDetails('{{ user.id }}')" style="padding: 4px 12px; border-radius: 6px; border: 1px solid #b0b0b0; background: #f5f7fa; cursor:pointer;">View</button></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div id="overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(220,230,250,0.6); backdrop-filter: blur(4px); z-index:999;"></div>
+    <div id="user-popup" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#fff; border-radius:12px; box-shadow:0 4px 24px rgba(0,0,0,0.08); padding:2rem; min-width:320px; z-index:1000;">
+        <span id="popup-content"></span>
+        <div style="margin-top:1.5rem; display:flex; gap:1rem; justify-content:flex-end;">
+            <button id="block-btn" style="padding: 6px 16px; border-radius: 6px; border: 1px solid #b0b0b0; background: #ffeaea; color:#b00; cursor:pointer;">Block user</button>
+            <button onclick="closePopup()" style="padding: 6px 16px; border-radius: 6px; border: 1px solid #b0b0b0; background: #f5f7fa; cursor:pointer;">Close</button>
+        </div>
+    </div>
+</div>
+<script>
+function showUserDetails(userId) {
+    fetch('/admin-dashboard/user/' + userId + '/details/')
+        .then(resp => resp.json())
+        .then(data => {
+            document.getElementById('popup-content').innerHTML =
+                `<b>Username:</b> ${data.username}<br>
+                 <b>First name:</b> ${data.first_name || '-'}<br>
+                 <b>Last name:</b> ${data.last_name || '-'}<br>
+                 <b>Email:</b> ${data.email}<br>
+                 <b>Status:</b> ${data.status}`;
+            if (data.status === 'Active') {
+                document.getElementById('block-btn').style.display = '';
+                document.getElementById('block-btn').onclick = function() {
+                    fetch('/admin-dashboard/user/' + userId + '/block/', {method:'POST'})
+                        .then(() => location.reload());
+                };
+            } else {
+                document.getElementById('block-btn').style.display = 'none';
+            }
+            document.getElementById('overlay').style.display = 'block';
+            document.getElementById('user-popup').style.display = 'block';
+        });
+}
+function closePopup() {
+    document.getElementById('user-popup').style.display = 'none';
+    document.getElementById('overlay').style.display = 'none';
+}
+</script>
+{% endblock %}

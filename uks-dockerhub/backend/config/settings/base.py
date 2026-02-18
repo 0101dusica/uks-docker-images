@@ -21,6 +21,7 @@ INSTALLED_APPS = [
     'badges',
     'analytics',
     'core',
+    'frontend',
 ]
 
 MIDDLEWARE = [
@@ -38,7 +39,7 @@ ROOT_URLCONF = 'config.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'frontend' / 'templates'],
+        'DIRS': [BASE_DIR / 'backend' / 'frontend' / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -53,6 +54,10 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
+
+# Use custom user model
+AUTH_USER_MODEL = 'users.User'
+
 # Database placeholder (override in docker/local/production)
 DATABASES = {}
 
@@ -61,7 +66,7 @@ CACHES = {}
 
 # Static files
 STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'frontend' / 'static'
+STATIC_ROOT = BASE_DIR / 'backend' / 'frontend' / 'static'
 
 # Logging (basic setup)
 LOGGING = {
