@@ -1,5 +1,8 @@
 from django.urls import path
-from .views import registration_view, registration_success_view, login_view, login_success_view, admin_dashboard_view, superadmin_dashboard_view, user_details_view, block_user_view, superadmin_user_details_view, superadmin_user_block_view, superadmin_admin_details_view, superadmin_admin_block_view, logout_view
+from .views import registration_view, registration_success_view, login_view, login_success_view, admin_dashboard_view, \
+    superadmin_dashboard_view, user_details_view, block_user_view, superadmin_user_details_view, \
+    superadmin_user_block_view, superadmin_admin_details_view, superadmin_admin_block_view, logout_view, \
+    public_repositories_view
 
 urlpatterns = [
     path('', registration_view, name='register'),
@@ -17,4 +20,5 @@ urlpatterns = [
     path('superadmin-dashboard/user/<int:user_id>/block/', superadmin_user_block_view, name='superadmin-user-block'),
     path('superadmin-dashboard/admin/<int:admin_id>/details/', superadmin_admin_details_view, name='superadmin-admin-details'),
     path('superadmin-dashboard/admin/<int:admin_id>/block/', superadmin_admin_block_view, name='superadmin-admin-block'),
+    path('public-repositories/', public_repositories_view, name='public-repositories')
 ]

@@ -1,4 +1,8 @@
 from django.contrib.auth import logout
+
+from repositories.models import Repository
+
+
 # Logout view
 def logout_view(request):
     logout(request)
@@ -172,3 +176,7 @@ def superadmin_admin_block_view(request, admin_id):
         except User.DoesNotExist:
             return JsonResponse({'error': 'Admin not found'}, status=404)
     return HttpResponseForbidden()
+
+def public_repositories_view(request):
+    repositories = Repository.objects.filter(is_public=True)
+    return render(request, 'public_repositories.html',{'repositories': repositories})

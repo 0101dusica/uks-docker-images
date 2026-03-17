@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Public Repositories</title>
+    <style>
+      body { font-family: system-ui, Arial, sans-serif; margin: 24px; }
+      .repo { border: 1px solid #ddd; border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; }
+      .repo h3 { margin: 0 0 6px; }
+      .muted { color: #666; font-size: 14px; }
+      .stars { font-weight: 600; }
+    </style>
+  </head>
+  <body>
+    <h1>Public Repositories</h1>
+
+    {% if repositories %}
+      {% for repo in repositories %}
+        <div class="repo">
+          <h3>{{ repo.name }}</h3>
+
+          {% if repo.description %}
+            <p>{{ repo.description }}</p>
+          {% else %}
+            <p class="muted">No description.</p>
+          {% endif %}
+
+    <p class="muted">
+  <span class="stars">{{ repo.stars }}</span>
+  &nbsp;&nbsp; Created: {{ repo.created_at|date:"Y-m-d H:i"}}
+</p>
+        </div>
+      {% endfor %}
+    {% else %}
+      <p>No public repositories found.</p>
+    {% endif %}
+  </body>
+</html>

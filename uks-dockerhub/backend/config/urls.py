@@ -6,4 +6,5 @@ urlpatterns = [
     path('api/users/', include('users.urls')),
     path('accounts/', include('frontend.urls')),
     path('', include('frontend.urls')),
+    path ('repositories/', include('frontend.urls')),
 ]
