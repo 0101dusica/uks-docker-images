@@ -178,5 +178,5 @@ def superadmin_admin_block_view(request, admin_id):
     return HttpResponseForbidden()
 
 def public_repositories_view(request):
-    repositories = Repository.objects.filter(is_public=True)
-    return render(request, 'public_repositories.html',{'repositories': repositories})
+    repositories = Repository.objects.filter(visibility='public').order_by('-created_at')
+    return render(request, 'public_repositories.html', {'repositories': repositories})
