@@ -1,6 +1,6 @@
 from django.contrib.auth import login, logout
 
-from repositories.forms import RepositoryCreateForm
+from repositories.forms import RepositoryCreateForm, RepositoryEditForm
 from repositories.models import Repository
 
 
@@ -200,6 +200,21 @@ def create_repository_view(request):
     else:
         form = RepositoryCreateForm(owner=request.user)
     return render(request, 'create_repository.html', {'form': form})
+
+
+@login_required(login_url='login')
+def edit_repository_view(request, repo_id):
+    repo = Repository.objects.get(id=repo_id)
+    if repo.owner != request.user:
+        return HttpResponseForbidden('You can only edit your own repositories.')
+    if request.method == 'POST':
+        form = RepositoryEditForm(request.POST, instance=repo)
+        if form.is_valid():
+            form.save()
+            return redirect('my-repositories')
+    else:
+        form = RepositoryEditForm(instance=repo)
+    return render(request, 'edit_repository.html', {'form': form, 'repo': repo})
 
 
 @login_required(login_url='login')

@@ -2,7 +2,8 @@ from django.urls import path
 from .views import registration_view, registration_success_view, login_view, login_success_view, admin_dashboard_view, \
     superadmin_dashboard_view, user_details_view, block_user_view, superadmin_user_details_view, \
     superadmin_user_block_view, superadmin_admin_details_view, superadmin_admin_block_view, logout_view, \
-    public_repositories_view, force_password_change_view, my_repositories_view, create_repository_view
+    public_repositories_view, force_password_change_view, my_repositories_view, create_repository_view, \
+    edit_repository_view
 
 urlpatterns = [
     path('', registration_view, name='register'),
@@ -24,4 +25,5 @@ urlpatterns = [
     path('public-repositories/', public_repositories_view, name='public-repositories'),
     path('my-repositories/', my_repositories_view, name='my-repositories'),
     path('repositories/create/', create_repository_view, name='create-repository'),
+    path('repositories/<int:repo_id>/edit/', edit_repository_view, name='edit-repository'),
 ]

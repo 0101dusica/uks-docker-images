@@ -27,3 +27,13 @@ class RepositoryCreateForm(forms.ModelForm):
         if commit:
             repo.save()
         return repo
+
+
+class RepositoryEditForm(forms.ModelForm):
+    class Meta:
+        model = Repository
+        fields = ['description', 'visibility']
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 4}),
+            'visibility': forms.Select(choices=Visibility.choices),
+        }
