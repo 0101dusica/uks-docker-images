@@ -1,20 +1,21 @@
-from django.contrib.auth import logout
+from django.contrib.auth import login, logout
 
 from repositories.models import Repository
 
 
-# Logout view
+from django.contrib.auth.decorators import login_required
+from django.http import JsonResponse, HttpResponseForbidden
+from django.shortcuts import render, redirect
+from django.views.decorators.csrf import csrf_exempt
+
+from users.forms import CustomUserCreationForm, CustomLoginForm
+from users.models import User
+from users.permissions import admin_required, superadmin_required
+
+
 def logout_view(request):
     logout(request)
     return redirect('login')
-from users.permissions import superadmin_required
-from django.http import JsonResponse, HttpResponseForbidden
-from django.views.decorators.csrf import csrf_exempt
-from users.permissions import admin_required, superadmin_required
-from users.models import User
-from django.shortcuts import render, redirect
-from users.forms import CustomUserCreationForm, CustomLoginForm
-from django.contrib.auth import login
 
 def login_view(request):
     error = None
@@ -180,3 +181,27 @@ def superadmin_admin_block_view(request, admin_id):
 def public_repositories_view(request):
     repositories = Repository.objects.filter(visibility='public').order_by('-created_at')
     return render(request, 'public_repositories.html', {'repositories': repositories})
+
+
+@login_required(login_url='login')
+def force_password_change_view(request):
+    error = None
+    if request.method == 'POST':
+        new_password = request.POST.get('new_password')
+        confirm_password = request.POST.get('confirm_password')
+        if not new_password or len(new_password) < 8:
+            error = 'Password must be at least 8 characters long.'
+        elif new_password != confirm_password:
+            error = 'Passwords do not match.'
+        else:
+            request.user.set_password(new_password)
+            request.user.must_change_password = False
+            request.user.save()
+            login(request, request.user)
+            if request.user.role == 'superadmin':
+                return redirect('superadmin-dashboard')
+            elif request.user.role == 'admin':
+                return redirect('admin-dashboard')
+            else:
+                return redirect('login-success')
+    return render(request, 'force_password_change.html', {'error': error})
