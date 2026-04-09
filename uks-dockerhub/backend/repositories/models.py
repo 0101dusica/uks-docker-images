@@ -37,3 +37,28 @@ class Repository(models.Model):
     def __str__(self):
         return f"{self.owner.username}/{self.name}"
 
+
+class Star(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='starred_repos',
+    )
+    repository = models.ForeignKey(
+        Repository,
+        on_delete=models.CASCADE,
+        related_name='starred_by',
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'repository'],
+                name='unique_star_per_user_repo',
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.user.username} -> {self.repository.name}"
+

@@ -1,7 +1,7 @@
 from django.contrib.auth import login, logout
 
 from repositories.forms import RepositoryCreateForm, RepositoryEditForm
-from repositories.models import Repository
+from repositories.models import Repository, Star
 from tags.models import Tag
 
 
@@ -182,7 +182,16 @@ def superadmin_admin_block_view(request, admin_id):
 
 def public_repositories_view(request):
     repositories = Repository.objects.filter(visibility='public').order_by('-created_at')
-    return render(request, 'public_repositories.html', {'repositories': repositories})
+    starred_ids = set()
+    if request.user.is_authenticated:
+        starred_ids = set(
+            Star.objects.filter(user=request.user, repository__in=repositories)
+            .values_list('repository_id', flat=True)
+        )
+    return render(request, 'public_repositories.html', {
+        'repositories': repositories,
+        'starred_ids': starred_ids,
+    })
 
 
 @login_required(login_url='login')
@@ -227,6 +236,22 @@ def delete_repository_view(request, repo_id):
             return HttpResponseForbidden('You can only delete your own repositories.')
         repo.delete()
         return redirect('my-repositories')
+    return HttpResponseForbidden()
+
+
+@csrf_exempt
+@login_required(login_url='login')
+def toggle_star_view(request, repo_id):
+    if request.method == 'POST':
+        repo = Repository.objects.get(id=repo_id)
+        star, created = Star.objects.get_or_create(user=request.user, repository=repo)
+        if not created:
+            star.delete()
+            repo.stars = Star.objects.filter(repository=repo).count()
+        else:
+            repo.stars = Star.objects.filter(repository=repo).count()
+        repo.save()
+        return redirect('public-repositories')
     return HttpResponseForbidden()
 
 
