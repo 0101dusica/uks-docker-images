@@ -218,6 +218,18 @@ def edit_repository_view(request, repo_id):
     return render(request, 'edit_repository.html', {'form': form, 'repo': repo})
 
 
+@csrf_exempt
+@login_required(login_url='login')
+def delete_repository_view(request, repo_id):
+    if request.method == 'POST':
+        repo = Repository.objects.get(id=repo_id)
+        if repo.owner != request.user:
+            return HttpResponseForbidden('You can only delete your own repositories.')
+        repo.delete()
+        return redirect('my-repositories')
+    return HttpResponseForbidden()
+
+
 @login_required(login_url='login')
 def manage_tags_view(request, repo_id):
     repo = Repository.objects.get(id=repo_id)
