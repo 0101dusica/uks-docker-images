@@ -2,6 +2,7 @@ from django.contrib.auth import login, logout
 
 from repositories.forms import RepositoryCreateForm, RepositoryEditForm
 from repositories.models import Repository
+from tags.models import Tag
 
 
 from django.contrib.auth.decorators import login_required
@@ -215,6 +216,37 @@ def edit_repository_view(request, repo_id):
     else:
         form = RepositoryEditForm(instance=repo)
     return render(request, 'edit_repository.html', {'form': form, 'repo': repo})
+
+
+@login_required(login_url='login')
+def manage_tags_view(request, repo_id):
+    repo = Repository.objects.get(id=repo_id)
+    if repo.owner != request.user:
+        return HttpResponseForbidden('You can only manage tags on your own repositories.')
+    error = None
+    if request.method == 'POST' and 'add_tag' in request.POST:
+        tag_name = request.POST.get('tag_name', '').strip()
+        if not tag_name:
+            error = 'Tag name cannot be empty.'
+        elif Tag.objects.filter(repository=repo, name=tag_name).exists():
+            error = 'This tag already exists.'
+        else:
+            Tag.objects.create(repository=repo, name=tag_name)
+            return redirect('manage-tags', repo_id=repo.id)
+    tags = Tag.objects.filter(repository=repo).order_by('-created_at')
+    return render(request, 'manage_tags.html', {'repo': repo, 'tags': tags, 'error': error})
+
+
+@csrf_exempt
+@login_required(login_url='login')
+def delete_tag_view(request, repo_id, tag_id):
+    if request.method == 'POST':
+        repo = Repository.objects.get(id=repo_id)
+        if repo.owner != request.user:
+            return HttpResponseForbidden('You can only delete tags on your own repositories.')
+        Tag.objects.filter(id=tag_id, repository=repo).delete()
+        return redirect('manage-tags', repo_id=repo.id)
+    return HttpResponseForbidden()
 
 
 @login_required(login_url='login')

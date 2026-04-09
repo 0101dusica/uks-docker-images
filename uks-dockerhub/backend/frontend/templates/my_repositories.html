@@ -49,6 +49,7 @@
                     <span>{{ repo.stars }} stars</span>
                     &nbsp;&nbsp; Created: {{ repo.created_at|date:"Y-m-d H:i" }}
                     &nbsp;&nbsp; <a href="{% url 'edit-repository' repo.id %}" style="color:#5b7be6; text-decoration:none; font-weight:500;">Edit</a>
+                    &nbsp;&nbsp; <a href="{% url 'manage-tags' repo.id %}" style="color:#5b7be6; text-decoration:none; font-weight:500;">Tags</a>
                 </p>
             </div>
         {% endfor %}
