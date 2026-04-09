@@ -51,6 +51,7 @@ def create_superadmin(sender, **kwargs):
         last_name='Admin',
         role='superadmin',
         is_active=True,
+        must_change_password=True,
     )
     write_password_file(password)
     logger.info('Superadmin account created successfully on first startup.')

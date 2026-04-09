@@ -10,6 +10,7 @@ class User(AbstractUser):
         ('superadmin', 'Superadmin'),
     )
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='user')
+    must_change_password = models.BooleanField(default=False)
 
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = ['email']
