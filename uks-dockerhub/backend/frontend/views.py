@@ -1,5 +1,6 @@
 from django.contrib.auth import login, logout
 
+from repositories.forms import RepositoryCreateForm
 from repositories.models import Repository
 
 
@@ -181,6 +182,24 @@ def superadmin_admin_block_view(request, admin_id):
 def public_repositories_view(request):
     repositories = Repository.objects.filter(visibility='public').order_by('-created_at')
     return render(request, 'public_repositories.html', {'repositories': repositories})
+
+
+@login_required(login_url='login')
+def my_repositories_view(request):
+    repositories = Repository.objects.filter(owner=request.user).order_by('-created_at')
+    return render(request, 'my_repositories.html', {'repositories': repositories})
+
+
+@login_required(login_url='login')
+def create_repository_view(request):
+    if request.method == 'POST':
+        form = RepositoryCreateForm(request.POST, owner=request.user)
+        if form.is_valid():
+            form.save()
+            return redirect('my-repositories')
+    else:
+        form = RepositoryCreateForm(owner=request.user)
+    return render(request, 'create_repository.html', {'form': form})
 
 
 @login_required(login_url='login')
