@@ -47,3 +47,27 @@ class UserModelTests(TestCase):
             password='pass1234', must_change_password=True
         )
         self.assertTrue(user.must_change_password)
+
+    def test_default_badge_is_none(self):
+        user = User.objects.create_user(
+            username='testuser', email='test@example.com', password='pass1234'
+        )
+        self.assertEqual(user.badge, 'none')
+
+    def test_assign_verified_publisher_badge(self):
+        user = User.objects.create_user(
+            username='testuser', email='test@example.com', password='pass1234'
+        )
+        user.badge = 'verified_publisher'
+        user.save()
+        user.refresh_from_db()
+        self.assertEqual(user.badge, 'verified_publisher')
+
+    def test_assign_sponsored_oss_badge(self):
+        user = User.objects.create_user(
+            username='testuser', email='test@example.com', password='pass1234'
+        )
+        user.badge = 'sponsored_oss'
+        user.save()
+        user.refresh_from_db()
+        self.assertEqual(user.badge, 'sponsored_oss')
