@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Tags - {{ repo.name }}{% endblock %}
+{% block extra_head %}
+<style>
+    body { align-items: flex-start; padding-top: 40px; }
+    .tags-container { width: 700px; max-width: 95vw; }
+    .tags-container h1 { color: #2d3a4b; text-align: center; margin-bottom: 0.5rem; }
+    .subtitle { text-align: center; color: #666; margin-bottom: 1.5rem; }
+    .add-form { display: flex; gap: 10px; margin-bottom: 1.5rem; }
+    .add-form input[type="text"] { flex: 1; padding: 10px 14px; border: 1px solid #d1d9e6; border-radius: 8px; font-size: 1rem; }
+    .add-btn {
+        background: #7ea1f7; color: #fff; border: none; border-radius: 8px;
+        padding: 10px 20px; font-size: 1rem; font-weight: 600; cursor: pointer;
+        transition: background 0.2s;
+    }
+    .add-btn:hover { background: #5b7be6; }
+    .tag-item {
+        background: #fff; border: 1px solid #d1d9e6; border-radius: 12px;
+        padding: 12px 20px; margin-bottom: 10px; display: flex;
+        justify-content: space-between; align-items: center;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .tag-name { font-weight: 600; color: #2d3a4b; }
+    .tag-date { color: #666; font-size: 14px; }
+    .delete-btn {
+        background: #e74c3c; color: #fff; border: none; border-radius: 6px;
+        padding: 6px 14px; font-size: 0.9rem; cursor: pointer;
+        transition: background 0.2s;
+    }
+    .delete-btn:hover { background: #c0392b; }
+    .empty-msg { text-align: center; color: #666; margin-top: 2rem; }
+    .back-link { text-align: center; margin-top: 1.5rem; }
+    .back-link a { color: #5b7be6; font-weight: 500; text-decoration: none; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="tags-container">
+    <h1>Tags</h1>
+    <p class="subtitle">{{ repo.name }}</p>
+
+    {% if error %}
+        <div class="errorlist" style="margin-bottom: 1rem;">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" class="add-form">
+        {% csrf_token %}
+        <input type="text" name="tag_name" placeholder="Tag name (e.g. latest, v1.0, stable)">
+        <button type="submit" name="add_tag" class="add-btn">Add Tag</button>
+    </form>
+
+    {% if tags %}
+        {% for tag in tags %}
+            <div class="tag-item">
+                <div>
+                    <span class="tag-name">{{ tag.name }}</span>
+                    <span class="tag-date">&nbsp;&nbsp; {{ tag.created_at|date:"Y-m-d H:i" }}</span>
+                </div>
+                <form method="post" action="{% url 'delete-tag' repo.id tag.id %}" style="margin:0;">
+                    {% csrf_token %}
+                    <button type="submit" class="delete-btn">Delete</button>
+                </form>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p class="empty-msg">No tags yet.</p>
+    {% endif %}
+
+    <div class="back-link">
+        <a href="{% url 'my-repositories' %}">Back to My Repositories</a>
+    </div>
+</div>
+{% endblock %}

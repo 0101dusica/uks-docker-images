@@ -1,4 +1,10 @@
 from django.contrib.auth import login, logout
+
+from repositories.forms import RepositoryCreateForm, RepositoryEditForm
+from repositories.models import Repository, Star
+from tags.models import Tag
+
+
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseForbidden
 from django.shortcuts import render, redirect
@@ -172,6 +178,111 @@ def superadmin_admin_block_view(request, admin_id):
             return JsonResponse({'success': True})
         except User.DoesNotExist:
             return JsonResponse({'error': 'Admin not found'}, status=404)
+    return HttpResponseForbidden()
+
+def public_repositories_view(request):
+    repositories = Repository.objects.filter(visibility='public').order_by('-created_at')
+    starred_ids = set()
+    if request.user.is_authenticated:
+        starred_ids = set(
+            Star.objects.filter(user=request.user, repository__in=repositories)
+            .values_list('repository_id', flat=True)
+        )
+    return render(request, 'public_repositories.html', {
+        'repositories': repositories,
+        'starred_ids': starred_ids,
+    })
+
+
+@login_required(login_url='login')
+def my_repositories_view(request):
+    repositories = Repository.objects.filter(owner=request.user).order_by('-created_at')
+    return render(request, 'my_repositories.html', {'repositories': repositories})
+
+
+@login_required(login_url='login')
+def create_repository_view(request):
+    if request.method == 'POST':
+        form = RepositoryCreateForm(request.POST, owner=request.user)
+        if form.is_valid():
+            form.save()
+            return redirect('my-repositories')
+    else:
+        form = RepositoryCreateForm(owner=request.user)
+    return render(request, 'create_repository.html', {'form': form})
+
+
+@login_required(login_url='login')
+def edit_repository_view(request, repo_id):
+    repo = Repository.objects.get(id=repo_id)
+    if repo.owner != request.user:
+        return HttpResponseForbidden('You can only edit your own repositories.')
+    if request.method == 'POST':
+        form = RepositoryEditForm(request.POST, instance=repo)
+        if form.is_valid():
+            form.save()
+            return redirect('my-repositories')
+    else:
+        form = RepositoryEditForm(instance=repo)
+    return render(request, 'edit_repository.html', {'form': form, 'repo': repo})
+
+
+@csrf_exempt
+@login_required(login_url='login')
+def delete_repository_view(request, repo_id):
+    if request.method == 'POST':
+        repo = Repository.objects.get(id=repo_id)
+        if repo.owner != request.user:
+            return HttpResponseForbidden('You can only delete your own repositories.')
+        repo.delete()
+        return redirect('my-repositories')
+    return HttpResponseForbidden()
+
+
+@csrf_exempt
+@login_required(login_url='login')
+def toggle_star_view(request, repo_id):
+    if request.method == 'POST':
+        repo = Repository.objects.get(id=repo_id)
+        star, created = Star.objects.get_or_create(user=request.user, repository=repo)
+        if not created:
+            star.delete()
+            repo.stars = Star.objects.filter(repository=repo).count()
+        else:
+            repo.stars = Star.objects.filter(repository=repo).count()
+        repo.save()
+        return redirect('public-repositories')
+    return HttpResponseForbidden()
+
+
+@login_required(login_url='login')
+def manage_tags_view(request, repo_id):
+    repo = Repository.objects.get(id=repo_id)
+    if repo.owner != request.user:
+        return HttpResponseForbidden('You can only manage tags on your own repositories.')
+    error = None
+    if request.method == 'POST' and 'add_tag' in request.POST:
+        tag_name = request.POST.get('tag_name', '').strip()
+        if not tag_name:
+            error = 'Tag name cannot be empty.'
+        elif Tag.objects.filter(repository=repo, name=tag_name).exists():
+            error = 'This tag already exists.'
+        else:
+            Tag.objects.create(repository=repo, name=tag_name)
+            return redirect('manage-tags', repo_id=repo.id)
+    tags = Tag.objects.filter(repository=repo).order_by('-created_at')
+    return render(request, 'manage_tags.html', {'repo': repo, 'tags': tags, 'error': error})
+
+
+@csrf_exempt
+@login_required(login_url='login')
+def delete_tag_view(request, repo_id, tag_id):
+    if request.method == 'POST':
+        repo = Repository.objects.get(id=repo_id)
+        if repo.owner != request.user:
+            return HttpResponseForbidden('You can only delete tags on your own repositories.')
+        Tag.objects.filter(id=tag_id, repository=repo).delete()
+        return redirect('manage-tags', repo_id=repo.id)
     return HttpResponseForbidden()
 
 
