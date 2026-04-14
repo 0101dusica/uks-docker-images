@@ -49,8 +49,8 @@
 
     <div class="push-hint">
         Push an image to this repository from your terminal:<br>
-        <code>docker tag myimage localhost:5000/{{ repo.owner.username }}/{{ repo.name }}:tagname</code><br>
-        <code>docker push localhost:5000/{{ repo.owner.username }}/{{ repo.name }}:tagname</code>
+        <code>docker tag myimage localhost:5000/{{ repo.owner.username|lower }}/{{ repo.name|lower }}:tagname</code><br>
+        <code>docker push localhost:5000/{{ repo.owner.username|lower }}/{{ repo.name|lower }}:tagname</code>
     </div>
 
     {% if error %}

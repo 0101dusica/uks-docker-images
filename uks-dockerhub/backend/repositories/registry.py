@@ -8,6 +8,11 @@ class RegistryService:
     def __init__(self):
         self.base_url = settings.REGISTRY_URL
 
+    @staticmethod
+    def normalize_name(repo_name):
+        """Docker requires repository names to be lowercase."""
+        return repo_name.lower()
+
     def get_catalog(self):
         """Get list of all repositories in the registry."""
         try:
@@ -19,6 +24,7 @@ class RegistryService:
 
     def get_tags(self, repo_name):
         """Get list of tags for a repository."""
+        repo_name = self.normalize_name(repo_name)
         try:
             response = requests.get(
                 f'{self.base_url}/v2/{repo_name}/tags/list', timeout=5
@@ -30,6 +36,7 @@ class RegistryService:
 
     def get_manifest(self, repo_name, tag):
         """Get manifest for a specific tag (includes digest and size info)."""
+        repo_name = self.normalize_name(repo_name)
         try:
             response = requests.get(
                 f'{self.base_url}/v2/{repo_name}/manifests/{tag}',
@@ -52,6 +59,7 @@ class RegistryService:
 
     def delete_manifest(self, repo_name, digest):
         """Delete a manifest by digest (effectively deletes the tag)."""
+        repo_name = self.normalize_name(repo_name)
         try:
             response = requests.delete(
                 f'{self.base_url}/v2/{repo_name}/manifests/{digest}',
@@ -63,6 +71,7 @@ class RegistryService:
 
     def get_tag_digest(self, repo_name, tag):
         """Get the digest for a specific tag (needed for deletion)."""
+        repo_name = self.normalize_name(repo_name)
         try:
             response = requests.head(
                 f'{self.base_url}/v2/{repo_name}/manifests/{tag}',

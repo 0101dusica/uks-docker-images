@@ -52,7 +52,7 @@
                     &nbsp;&nbsp; <a href="{% url 'manage-tags' repo.id %}" style="color:#5b7be6; text-decoration:none; font-weight:500;">Tags</a>
                 </p>
                 <div style="background:#f5f7fa; border:1px solid #d1d9e6; border-radius:8px; padding:8px 12px; margin-top:8px; font-size:12px; color:#444;">
-                    <strong>Push:</strong> <code>docker push localhost:5000/{{ user.username }}/{{ repo.name }}:tagname</code>
+                    <strong>Push:</strong> <code>docker push localhost:5000/{{ user.username|lower }}/{{ repo.name|lower }}:tagname</code>
                 </div>
                 <form method="post" action="{% url 'delete-repository' repo.id %}" style="margin-top:8px;"
                       onsubmit="return confirm('Are you sure you want to delete {{ repo.name }}? This will also delete all tags.');">
