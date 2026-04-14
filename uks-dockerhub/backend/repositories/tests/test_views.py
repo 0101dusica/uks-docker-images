@@ -218,3 +218,76 @@ class StarTests(TestCase):
         response = self.client.post(reverse('toggle-star', args=[self.repo.id]))
         self.assertEqual(response.status_code, 302)
         self.assertFalse(Star.objects.filter(repository=self.repo).exists())
+
+
+class OfficialRepositoryTests(TestCase):
+
+    def setUp(self):
+        self.client = Client()
+        self.admin = User.objects.create_user(
+            username='admin1', email='admin@example.com',
+            password='pass1234', role='admin'
+        )
+        self.user = User.objects.create_user(
+            username='regular', email='user@example.com',
+            password='pass1234', role='user'
+        )
+
+    def test_admin_can_create_official_repo(self):
+        self.client.login(username='admin1', password='pass1234')
+        response = self.client.post(reverse('admin-dashboard'), {
+            'create_official': '1',
+            'name': 'nginx',
+            'description': 'Official Nginx image',
+        })
+        self.assertEqual(response.status_code, 302)
+        repo = Repository.objects.get(name='nginx')
+        self.assertTrue(repo.is_official)
+        self.assertEqual(repo.visibility, 'public')
+        self.assertEqual(repo.owner, self.admin)
+
+    def test_official_repo_display_name_has_no_prefix(self):
+        self.client.login(username='admin1', password='pass1234')
+        repo = Repository.objects.create(
+            name='python', owner=self.admin, is_official=True, visibility='public'
+        )
+        self.assertEqual(str(repo), 'python')
+        self.assertEqual(repo.display_name, 'python')
+
+    def test_regular_repo_display_name_has_prefix(self):
+        repo = Repository.objects.create(
+            name='myapp', owner=self.user, visibility='public'
+        )
+        self.assertEqual(str(repo), 'regular/myapp')
+        self.assertEqual(repo.display_name, 'regular/myapp')
+
+    def test_cannot_create_duplicate_official_repo(self):
+        self.client.login(username='admin1', password='pass1234')
+        Repository.objects.create(
+            name='nginx', owner=self.admin, is_official=True, visibility='public'
+        )
+        response = self.client.post(reverse('admin-dashboard'), {
+            'create_official': '1',
+            'name': 'nginx',
+            'description': 'Duplicate',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Repository.objects.filter(name='nginx', is_official=True).count(), 1)
+
+    def test_regular_user_cannot_create_official_repo(self):
+        self.client.login(username='regular', password='pass1234')
+        response = self.client.post(reverse('admin-dashboard'), {
+            'create_official': '1',
+            'name': 'nginx',
+            'description': 'Trying to create official',
+        })
+        self.assertEqual(response.status_code, 403)
+
+    def test_official_repos_shown_in_admin_dashboard(self):
+        self.client.login(username='admin1', password='pass1234')
+        Repository.objects.create(
+            name='redis', owner=self.admin, is_official=True, visibility='public'
+        )
+        response = self.client.get(reverse('admin-dashboard'))
+        self.assertContains(response, 'redis')
+        self.assertContains(response, 'Docker Official Image')

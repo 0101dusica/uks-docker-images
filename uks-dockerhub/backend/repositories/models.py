@@ -35,6 +35,14 @@ class Repository(models.Model):
         ]
 
     def __str__(self):
+        if self.is_official:
+            return self.name
+        return f"{self.owner.username}/{self.name}"
+
+    @property
+    def display_name(self):
+        if self.is_official:
+            return self.name
         return f"{self.owner.username}/{self.name}"
 
 

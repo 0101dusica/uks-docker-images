@@ -1,7 +1,7 @@
 from django.contrib.auth import login, logout
 from django.core.cache import cache
 
-from repositories.forms import RepositoryCreateForm, RepositoryEditForm
+from repositories.forms import RepositoryCreateForm, RepositoryEditForm, OfficialRepositoryCreateForm
 from repositories.models import Repository, Star
 from tags.models import Tag
 
@@ -74,7 +74,26 @@ def login_success_view(request):
 @admin_required
 def admin_dashboard_view(request):
     users = User.objects.filter(role='user')
-    return render(request, 'admin_dashboard.html', {'users': users})
+    official_repos = Repository.objects.filter(is_official=True).order_by('-created_at')
+    official_form_error = None
+
+    if request.method == 'POST' and 'create_official' in request.POST:
+        form = OfficialRepositoryCreateForm(request.POST)
+        if form.is_valid():
+            form.save(owner=request.user)
+            _invalidate_repo_cache()
+            return redirect('admin-dashboard')
+        else:
+            official_form_error = form.errors.as_text()
+    else:
+        form = OfficialRepositoryCreateForm()
+
+    return render(request, 'admin_dashboard.html', {
+        'users': users,
+        'official_repos': official_repos,
+        'official_form': form,
+        'official_form_error': official_form_error,
+    })
 
 @admin_required
 def user_details_view(request, user_id):
