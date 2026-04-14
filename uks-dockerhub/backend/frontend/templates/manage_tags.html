@@ -22,6 +22,9 @@
     }
     .tag-name { font-weight: 600; color: #2d3a4b; }
     .tag-date { color: #666; font-size: 14px; }
+    .tag-source { font-size: 11px; padding: 2px 6px; border-radius: 4px; margin-left: 8px; }
+    .tag-source.db { background: #e8f0fe; color: #1a73e8; }
+    .tag-source.registry { background: #e6f4ea; color: #1a7f37; }
     .delete-btn {
         background: #e74c3c; color: #fff; border: none; border-radius: 6px;
         padding: 6px 14px; font-size: 0.9rem; cursor: pointer;
@@ -31,12 +34,24 @@
     .empty-msg { text-align: center; color: #666; margin-top: 2rem; }
     .back-link { text-align: center; margin-top: 1.5rem; }
     .back-link a { color: #5b7be6; font-weight: 500; text-decoration: none; }
+    .section-title { color: #2d3a4b; margin-top: 1.5rem; margin-bottom: 0.5rem; font-size: 1.1rem; }
+    .push-hint {
+        background: #f5f7fa; border: 1px solid #d1d9e6; border-radius: 8px;
+        padding: 12px 16px; margin-bottom: 1.5rem; font-size: 13px; color: #444;
+    }
+    .push-hint code { background: #e8e8e8; padding: 2px 6px; border-radius: 4px; font-size: 12px; }
 </style>
 {% endblock %}
 {% block content %}
 <div class="tags-container">
     <h1>Tags</h1>
     <p class="subtitle">{{ repo.name }}</p>
+
+    <div class="push-hint">
+        Push an image to this repository from your terminal:<br>
+        <code>docker tag myimage localhost:5000/{{ repo.owner.username|lower }}/{{ repo.name|lower }}:tagname</code><br>
+        <code>docker push localhost:5000/{{ repo.owner.username|lower }}/{{ repo.name|lower }}:tagname</code>
+    </div>
 
     {% if error %}
         <div class="errorlist" style="margin-bottom: 1rem;">{{ error }}</div>
@@ -48,12 +63,30 @@
         <button type="submit" name="add_tag" class="add-btn">Add Tag</button>
     </form>
 
+    {% if registry_tags %}
+        <h3 class="section-title">Registry Tags (from docker push)</h3>
+        {% for tag_name in registry_tags %}
+            <div class="tag-item">
+                <div>
+                    <span class="tag-name">{{ tag_name }}</span>
+                    <span class="tag-source registry">registry</span>
+                </div>
+                <form method="post" action="{% url 'delete-registry-tag' repo.id tag_name %}" style="margin:0;">
+                    {% csrf_token %}
+                    <button type="submit" class="delete-btn">Delete</button>
+                </form>
+            </div>
+        {% endfor %}
+    {% endif %}
+
     {% if tags %}
+        <h3 class="section-title">Manual Tags</h3>
         {% for tag in tags %}
             <div class="tag-item">
                 <div>
                     <span class="tag-name">{{ tag.name }}</span>
                     <span class="tag-date">&nbsp;&nbsp; {{ tag.created_at|date:"Y-m-d H:i" }}</span>
+                    <span class="tag-source db">manual</span>
                 </div>
                 <form method="post" action="{% url 'delete-tag' repo.id tag.id %}" style="margin:0;">
                     {% csrf_token %}
@@ -61,8 +94,10 @@
                 </form>
             </div>
         {% endfor %}
-    {% else %}
-        <p class="empty-msg">No tags yet.</p>
+    {% endif %}
+
+    {% if not tags and not registry_tags %}
+        <p class="empty-msg">No tags yet. Push an image or add a tag manually.</p>
     {% endif %}
 
     <div class="back-link">

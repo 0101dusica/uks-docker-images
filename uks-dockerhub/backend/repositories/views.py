@@ -6,6 +6,7 @@ from rest_framework import status
 
 from .models import Repository
 from .serializers import PublicRepositorySerializer
+from .registry import RegistryService
 
 CACHE_TTL = 60 * 5  # 5 minutes
 
@@ -45,3 +46,34 @@ class PublicRepositoriesView(APIView):
         result = {'count': repos.count(), 'results': serializer.data}
         cache.set(cache_key, result, CACHE_TTL)
         return Response(result, status=status.HTTP_200_OK)
+
+
+class RegistryCatalogView(APIView):
+    """List all repositories in the container registry."""
+
+    def get(self, request):
+        registry = RegistryService()
+        repositories = registry.get_catalog()
+        return Response({'repositories': repositories}, status=status.HTTP_200_OK)
+
+
+class RegistryTagsView(APIView):
+    """List tags for a repository from the container registry."""
+
+    def get(self, request, repo_name):
+        registry = RegistryService()
+        tags = registry.get_tags(repo_name)
+
+        tag_details = []
+        for tag in tags:
+            manifest = registry.get_manifest(repo_name, tag)
+            tag_details.append({
+                'name': tag,
+                'digest': manifest.get('digest', '') if manifest else '',
+                'size': manifest.get('size', 0) if manifest else 0,
+            })
+
+        return Response({
+            'repository': repo_name,
+            'tags': tag_details,
+        }, status=status.HTTP_200_OK)

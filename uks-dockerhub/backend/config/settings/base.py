@@ -86,5 +86,8 @@ LOGGING = {
     },
 }
 
+# Container Registry
+REGISTRY_URL = os.environ.get('REGISTRY_URL', 'http://registry:5000')
+
 # Placeholder for Elasticsearch connection
 # ELASTICSEARCH_DSL = {}

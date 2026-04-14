@@ -3,6 +3,7 @@ from django.core.cache import cache
 
 from repositories.forms import RepositoryCreateForm, RepositoryEditForm, OfficialRepositoryCreateForm
 from repositories.models import Repository, Star
+from repositories.registry import RegistryService
 from tags.models import Tag
 
 
@@ -375,7 +376,18 @@ def manage_tags_view(request, repo_id):
             Tag.objects.create(repository=repo, name=tag_name)
             return redirect('manage-tags', repo_id=repo.id)
     tags = Tag.objects.filter(repository=repo).order_by('-created_at')
-    return render(request, 'manage_tags.html', {'repo': repo, 'tags': tags, 'error': error})
+
+    # Fetch tags from container registry
+    registry = RegistryService()
+    registry_repo_name = f'{repo.owner.username}/{repo.name}'
+    registry_tags = registry.get_tags(registry_repo_name)
+
+    return render(request, 'manage_tags.html', {
+        'repo': repo,
+        'tags': tags,
+        'registry_tags': registry_tags,
+        'error': error,
+    })
 
 
 @csrf_exempt
@@ -386,6 +398,22 @@ def delete_tag_view(request, repo_id, tag_id):
         if repo.owner != request.user:
             return HttpResponseForbidden('You can only delete tags on your own repositories.')
         Tag.objects.filter(id=tag_id, repository=repo).delete()
+        return redirect('manage-tags', repo_id=repo.id)
+    return HttpResponseForbidden()
+
+
+@csrf_exempt
+@login_required(login_url='login')
+def delete_registry_tag_view(request, repo_id, tag_name):
+    if request.method == 'POST':
+        repo = Repository.objects.get(id=repo_id)
+        if repo.owner != request.user:
+            return HttpResponseForbidden('You can only delete tags on your own repositories.')
+        registry = RegistryService()
+        registry_repo_name = f'{repo.owner.username}/{repo.name}'
+        digest = registry.get_tag_digest(registry_repo_name, tag_name)
+        if digest:
+            registry.delete_manifest(registry_repo_name, digest)
         return redirect('manage-tags', repo_id=repo.id)
     return HttpResponseForbidden()
 

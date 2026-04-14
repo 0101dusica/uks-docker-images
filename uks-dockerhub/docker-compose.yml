@@ -10,6 +10,7 @@ services:
     depends_on:
       - postgres
       - redis
+      - registry
     volumes:
       - ./backend:/app
     expose:
@@ -44,6 +45,16 @@ services:
     ports:
       - "6379:6379"
 
+  registry:
+    image: registry:2
+    restart: always
+    ports:
+      - "5000:5000"
+    volumes:
+      - registry_data:/var/lib/registry
+    environment:
+      REGISTRY_STORAGE_DELETE_ENABLED: "true"
+
   # elasticsearch:
   #   image: docker.elastic.co/elasticsearch/elasticsearch:8.11.1
   #   environment:
@@ -55,4 +66,5 @@ services:
 
 volumes:
   postgres_data:
+  registry_data:
   # esdata:
