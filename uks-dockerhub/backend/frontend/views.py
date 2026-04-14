@@ -449,6 +449,37 @@ def delete_registry_tag_view(request, repo_id, tag_name):
 
 
 @login_required(login_url='login')
+def profile_view(request):
+    error = None
+    success = None
+    if request.method == 'POST':
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
+        email = request.POST.get('email', '').strip()
+        if not email:
+            error = 'Email is required.'
+        elif User.objects.filter(email=email).exclude(id=request.user.id).exists():
+            error = 'This email is already taken.'
+        else:
+            request.user.first_name = first_name
+            request.user.last_name = last_name
+            request.user.email = email
+            request.user.save()
+            success = 'Profile updated successfully.'
+    return render(request, 'profile.html', {
+        'error': error,
+        'success': success,
+    })
+
+
+@login_required(login_url='login')
+def starred_repos_view(request):
+    starred = Star.objects.filter(user=request.user).select_related('repository', 'repository__owner').order_by('-created_at')
+    repositories = [s.repository for s in starred]
+    return render(request, 'starred_repos.html', {'repositories': repositories})
+
+
+@login_required(login_url='login')
 def force_password_change_view(request):
     error = None
     if request.method == 'POST':

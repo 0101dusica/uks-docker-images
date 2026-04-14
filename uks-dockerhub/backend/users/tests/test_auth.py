@@ -105,6 +105,90 @@ class RegistrationViewTests(TestCase):
         self.assertFalse(User.objects.filter(username='newuser').exists())
 
 
+class ProfileTests(TestCase):
+
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(
+            username='testuser', email='test@example.com',
+            password='pass1234', first_name='Test', last_name='User'
+        )
+        self.client.login(username='testuser', password='pass1234')
+
+    def test_profile_page_loads(self):
+        response = self.client.get(reverse('profile'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'testuser')
+        self.assertContains(response, 'test@example.com')
+
+    def test_update_profile(self):
+        response = self.client.post(reverse('profile'), {
+            'first_name': 'Updated',
+            'last_name': 'Name',
+            'email': 'new@example.com',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Profile updated successfully')
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.first_name, 'Updated')
+        self.assertEqual(self.user.email, 'new@example.com')
+
+    def test_duplicate_email_rejected(self):
+        User.objects.create_user(
+            username='other', email='taken@example.com', password='pass1234'
+        )
+        response = self.client.post(reverse('profile'), {
+            'first_name': 'Test',
+            'last_name': 'User',
+            'email': 'taken@example.com',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'already taken')
+
+    def test_unauthenticated_redirected(self):
+        self.client.logout()
+        response = self.client.get(reverse('profile'))
+        self.assertEqual(response.status_code, 302)
+
+
+class StarredReposTests(TestCase):
+
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(
+            username='staruser', email='star@example.com', password='pass1234'
+        )
+        self.owner = User.objects.create_user(
+            username='owner', email='owner@example.com', password='pass1234'
+        )
+        self.client.login(username='staruser', password='pass1234')
+
+    def test_starred_page_loads(self):
+        response = self.client.get(reverse('starred-repos'))
+        self.assertEqual(response.status_code, 200)
+
+    def test_shows_starred_repos(self):
+        from repositories.models import Repository, Star
+        repo = Repository.objects.create(
+            name='liked', owner=self.owner, visibility='public'
+        )
+        Star.objects.create(user=self.user, repository=repo)
+        response = self.client.get(reverse('starred-repos'))
+        self.assertContains(response, 'liked')
+
+    def test_does_not_show_unstarred_repos(self):
+        from repositories.models import Repository
+        Repository.objects.create(
+            name='notstarred', owner=self.owner, visibility='public'
+        )
+        response = self.client.get(reverse('starred-repos'))
+        self.assertNotContains(response, 'notstarred')
+
+    def test_empty_starred_message(self):
+        response = self.client.get(reverse('starred-repos'))
+        self.assertContains(response, "haven't starred any")
+
+
 class ForcePasswordChangeTests(TestCase):
 
     def setUp(self):

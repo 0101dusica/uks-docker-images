@@ -109,6 +109,7 @@
         {% block logout_button %}
         {% if request.user.is_authenticated %}
         <div class="logout-link">
+            <a href="{% url 'profile' %}">Profile</a>
             <a href="{% url 'logout' %}">Logout</a>
         </div>
         {% endif %}
