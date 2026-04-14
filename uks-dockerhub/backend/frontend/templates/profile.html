@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}My Profile{% endblock %}
+{% block extra_head %}
+<style>
+    .profile-box { min-width: 450px; max-width: 550px; }
+    .form-row { margin-bottom: 14px; }
+    .form-row label { display: block; margin-bottom: 4px; font-weight: 600; color: #2d3a4b; }
+    .form-row input { width: 100%; padding: 8px 12px; border: 1px solid #d1d9e6; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+    .form-row input[disabled] { background: #f0f0f0; color: #666; }
+    .btn-save { padding: 8px 24px; background: #2d3a4b; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
+    .btn-save:hover { background: #1a2636; }
+    .info-row { margin-bottom: 10px; font-size: 14px; color: #444; }
+    .info-row strong { color: #2d3a4b; }
+    .badge-tag { font-size: 12px; padding: 2px 8px; border-radius: 4px; }
+    .badge-verified { background: #0969da; color: #fff; }
+    .badge-sponsored { background: #0969da; color: #fff; }
+    .badge-none { background: #e0e0e0; color: #666; }
+    .success-msg { color: #1a7f37; background: #e6f4ea; padding: 8px 12px; border-radius: 6px; margin-bottom: 1rem; }
+    .error-msg { color: #b00; background: #ffeaea; padding: 8px 12px; border-radius: 6px; margin-bottom: 1rem; }
+    .profile-links { margin-top: 1.5rem; display: flex; gap: 1rem; }
+    .profile-links a { color: #5b7be6; text-decoration: none; font-weight: 500; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="form-box profile-box">
+    <h2 style="margin-bottom: 1.5rem;">My Profile</h2>
+
+    {% if success %}
+        <div class="success-msg">{{ success }}</div>
+    {% endif %}
+    {% if error %}
+        <div class="error-msg">{{ error }}</div>
+    {% endif %}
+
+    <div class="info-row"><strong>Username:</strong> {{ user.username }}</div>
+    <div class="info-row"><strong>Role:</strong> {{ user.role }}</div>
+    <div class="info-row">
+        <strong>Badge:</strong>
+        {% if user.badge == 'verified_publisher' %}
+            <span class="badge-tag badge-verified">Verified Publisher</span>
+        {% elif user.badge == 'sponsored_oss' %}
+            <span class="badge-tag badge-sponsored">Sponsored OSS</span>
+        {% else %}
+            <span class="badge-tag badge-none">None</span>
+        {% endif %}
+    </div>
+
+    <hr style="margin: 1.5rem 0;">
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-row">
+            <label for="first_name">First Name</label>
+            <input type="text" name="first_name" id="first_name" value="{{ user.first_name }}">
+        </div>
+        <div class="form-row">
+            <label for="last_name">Last Name</label>
+            <input type="text" name="last_name" id="last_name" value="{{ user.last_name }}">
+        </div>
+        <div class="form-row">
+            <label for="email">Email</label>
+            <input type="email" name="email" id="email" value="{{ user.email }}">
+        </div>
+        <button type="submit" class="btn-save">Save Changes</button>
+    </form>
+
+    <div class="profile-links">
+        <a href="{% url 'starred-repos' %}">My Starred Repositories</a>
+        <a href="{% url 'my-repositories' %}">My Repositories</a>
+    </div>
+</div>
+{% endblock %}

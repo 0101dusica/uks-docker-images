@@ -5,7 +5,8 @@ from .views import registration_view, registration_success_view, login_view, log
     superadmin_user_details_view, \
     superadmin_user_block_view, superadmin_admin_details_view, superadmin_admin_block_view, logout_view, \
     public_repositories_view, force_password_change_view, my_repositories_view, create_repository_view, \
-    edit_repository_view, delete_repository_view, toggle_star_view, manage_tags_view, delete_tag_view
+    edit_repository_view, delete_repository_view, toggle_star_view, manage_tags_view, delete_tag_view, \
+    profile_view, starred_repos_view
 
 urlpatterns = [
     path('', registration_view, name='register'),
@@ -14,6 +15,8 @@ urlpatterns = [
     path('login/', login_view, name='login'),
     path('login/success/', login_success_view, name='login-success'),
     path('logout/', logout_view, name='logout'),
+    path('profile/', profile_view, name='profile'),
+    path('starred/', starred_repos_view, name='starred-repos'),
     path('change-password/', force_password_change_view, name='force-password-change'),
     path('admin-dashboard/', admin_dashboard_view, name='admin-dashboard'),
     path('superadmin-dashboard/', superadmin_dashboard_view, name='superadmin-dashboard'),

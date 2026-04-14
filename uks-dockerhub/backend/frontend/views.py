@@ -75,6 +75,17 @@ def login_success_view(request):
 @admin_required
 def admin_dashboard_view(request):
     users = User.objects.filter(role='user')
+
+    user_search = request.GET.get('user_search', '').strip()
+    if user_search:
+        from django.db.models import Q
+        users = users.filter(
+            Q(username__icontains=user_search) |
+            Q(email__icontains=user_search) |
+            Q(first_name__icontains=user_search) |
+            Q(last_name__icontains=user_search)
+        )
+
     official_repos = Repository.objects.filter(is_official=True).order_by('-created_at')
     official_form_error = None
 
@@ -91,6 +102,7 @@ def admin_dashboard_view(request):
 
     return render(request, 'admin_dashboard.html', {
         'users': users,
+        'user_search': user_search,
         'official_repos': official_repos,
         'official_form': form,
         'official_form_error': official_form_error,
@@ -179,6 +191,23 @@ def block_user_view(request, user_id):
 def superadmin_dashboard_view(request):
     users = User.objects.filter(role='user')
     admins = User.objects.filter(role='admin')
+
+    user_search = request.GET.get('user_search', '').strip()
+    if user_search:
+        from django.db.models import Q
+        users = users.filter(
+            Q(username__icontains=user_search) |
+            Q(email__icontains=user_search) |
+            Q(first_name__icontains=user_search) |
+            Q(last_name__icontains=user_search)
+        )
+        admins = admins.filter(
+            Q(username__icontains=user_search) |
+            Q(email__icontains=user_search) |
+            Q(first_name__icontains=user_search) |
+            Q(last_name__icontains=user_search)
+        )
+
     admin_form_error = None
     if request.method == 'POST' and 'add_admin' in request.POST:
         # Dodavanje novog admina
@@ -196,6 +225,7 @@ def superadmin_dashboard_view(request):
     return render(request, 'superadmin_dashboard.html', {
         'users': users,
         'admins': admins,
+        'user_search': user_search,
         'admin_form': form,
         'admin_form_error': admin_form_error,
     })
@@ -416,6 +446,37 @@ def delete_registry_tag_view(request, repo_id, tag_name):
             registry.delete_manifest(registry_repo_name, digest)
         return redirect('manage-tags', repo_id=repo.id)
     return HttpResponseForbidden()
+
+
+@login_required(login_url='login')
+def profile_view(request):
+    error = None
+    success = None
+    if request.method == 'POST':
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
+        email = request.POST.get('email', '').strip()
+        if not email:
+            error = 'Email is required.'
+        elif User.objects.filter(email=email).exclude(id=request.user.id).exists():
+            error = 'This email is already taken.'
+        else:
+            request.user.first_name = first_name
+            request.user.last_name = last_name
+            request.user.email = email
+            request.user.save()
+            success = 'Profile updated successfully.'
+    return render(request, 'profile.html', {
+        'error': error,
+        'success': success,
+    })
+
+
+@login_required(login_url='login')
+def starred_repos_view(request):
+    starred = Star.objects.filter(user=request.user).select_related('repository', 'repository__owner').order_by('-created_at')
+    repositories = [s.repository for s in starred]
+    return render(request, 'starred_repos.html', {'repositories': repositories})
 
 
 @login_required(login_url='login')
