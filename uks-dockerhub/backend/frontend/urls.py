@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import registration_view, registration_success_view, login_view, login_success_view, admin_dashboard_view, \
-    superadmin_dashboard_view, user_details_view, block_user_view, superadmin_user_details_view, \
+    superadmin_dashboard_view, user_details_view, block_user_view, assign_badge_view, superadmin_user_details_view, \
     superadmin_user_block_view, superadmin_admin_details_view, superadmin_admin_block_view, logout_view, \
     public_repositories_view, force_password_change_view, my_repositories_view, create_repository_view, \
     edit_repository_view, delete_repository_view, toggle_star_view, manage_tags_view, delete_tag_view
@@ -17,6 +17,7 @@ urlpatterns = [
     path('superadmin-dashboard/', superadmin_dashboard_view, name='superadmin-dashboard'),
     path('admin-dashboard/user/<int:user_id>/details/', user_details_view, name='user-details'),
     path('admin-dashboard/user/<int:user_id>/block/', block_user_view, name='block-user'),
+    path('admin-dashboard/user/<int:user_id>/assign-badge/', assign_badge_view, name='assign-badge'),
     # Superadmin dashboard detalji/blokiranje
     path('superadmin-dashboard/user/<int:user_id>/details/', superadmin_user_details_view, name='superadmin-user-details'),
     path('superadmin-dashboard/user/<int:user_id>/block/', superadmin_user_block_view, name='superadmin-user-block'),

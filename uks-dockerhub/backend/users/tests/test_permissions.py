@@ -42,6 +42,7 @@ class AdminPermissionTests(TestCase):
             'last_name': '',
             'email': 'user@example.com',
             'status': 'Active',
+            'badge': 'none',
         })
 
     def test_admin_can_block_user(self):

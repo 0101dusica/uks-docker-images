@@ -105,10 +105,30 @@ def user_details_view(request, user_id):
             'last_name': user.last_name,
             'email': user.email,
             'status': 'Active' if user.is_active else 'Blocked',
+            'badge': user.badge,
         }
         return JsonResponse(data)
     except User.DoesNotExist:
         return JsonResponse({'error': 'User not found'}, status=404)
+
+@csrf_exempt
+@admin_required
+def assign_badge_view(request, user_id):
+    if request.method == 'POST':
+        try:
+            user = User.objects.get(id=user_id, role='user')
+            import json
+            body = json.loads(request.body)
+            badge = body.get('badge', 'none')
+            if badge not in ('none', 'verified_publisher', 'sponsored_oss'):
+                return JsonResponse({'error': 'Invalid badge'}, status=400)
+            user.badge = badge
+            user.save()
+            _invalidate_repo_cache()
+            return JsonResponse({'success': True, 'badge': user.badge})
+        except User.DoesNotExist:
+            return JsonResponse({'error': 'User not found'}, status=404)
+    return HttpResponseForbidden()
 
 @csrf_exempt
 @admin_required

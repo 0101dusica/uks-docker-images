@@ -291,3 +291,80 @@ class OfficialRepositoryTests(TestCase):
         response = self.client.get(reverse('admin-dashboard'))
         self.assertContains(response, 'redis')
         self.assertContains(response, 'Docker Official Image')
+
+
+class BadgeAssignmentTests(TestCase):
+
+    def setUp(self):
+        self.client = Client()
+        self.admin = User.objects.create_user(
+            username='admin1', email='admin@example.com',
+            password='pass1234', role='admin'
+        )
+        self.user = User.objects.create_user(
+            username='regular', email='user@example.com',
+            password='pass1234', role='user'
+        )
+
+    def test_admin_can_assign_verified_publisher(self):
+        self.client.login(username='admin1', password='pass1234')
+        response = self.client.post(
+            reverse('assign-badge', args=[self.user.id]),
+            data='{"badge": "verified_publisher"}',
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.badge, 'verified_publisher')
+
+    def test_admin_can_assign_sponsored_oss(self):
+        self.client.login(username='admin1', password='pass1234')
+        response = self.client.post(
+            reverse('assign-badge', args=[self.user.id]),
+            data='{"badge": "sponsored_oss"}',
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.badge, 'sponsored_oss')
+
+    def test_admin_can_remove_badge(self):
+        self.user.badge = 'verified_publisher'
+        self.user.save()
+        self.client.login(username='admin1', password='pass1234')
+        response = self.client.post(
+            reverse('assign-badge', args=[self.user.id]),
+            data='{"badge": "none"}',
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.badge, 'none')
+
+    def test_invalid_badge_rejected(self):
+        self.client.login(username='admin1', password='pass1234')
+        response = self.client.post(
+            reverse('assign-badge', args=[self.user.id]),
+            data='{"badge": "fake_badge"}',
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_regular_user_cannot_assign_badge(self):
+        self.client.login(username='regular', password='pass1234')
+        response = self.client.post(
+            reverse('assign-badge', args=[self.user.id]),
+            data='{"badge": "verified_publisher"}',
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_user_details_includes_badge(self):
+        self.user.badge = 'sponsored_oss'
+        self.user.save()
+        self.client.login(username='admin1', password='pass1234')
+        response = self.client.get(
+            reverse('user-details', args=[self.user.id])
+        )
+        data = response.json()
+        self.assertEqual(data['badge'], 'sponsored_oss')

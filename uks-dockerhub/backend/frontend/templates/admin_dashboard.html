@@ -76,8 +76,17 @@
         </tbody>
     </table>
     <div id="overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(220,230,250,0.6); backdrop-filter: blur(4px); z-index:999;"></div>
-    <div id="user-popup" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#fff; border-radius:12px; box-shadow:0 4px 24px rgba(0,0,0,0.08); padding:2rem; min-width:320px; z-index:1000;">
+    <div id="user-popup" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#fff; border-radius:12px; box-shadow:0 4px 24px rgba(0,0,0,0.08); padding:2rem; min-width:360px; z-index:1000;">
         <span id="popup-content"></span>
+        <div style="margin-top:1rem;">
+            <label style="font-weight:600; display:block; margin-bottom:4px;">Assign Badge:</label>
+            <select id="badge-select" style="padding:6px 10px; border:1px solid #d1d9e6; border-radius:6px; width:100%;">
+                <option value="none">None</option>
+                <option value="verified_publisher">Verified Publisher</option>
+                <option value="sponsored_oss">Sponsored OSS</option>
+            </select>
+            <button id="badge-btn" style="margin-top:8px; padding:6px 16px; border-radius:6px; border:none; background:#0969da; color:#fff; cursor:pointer;">Save Badge</button>
+        </div>
         <div style="margin-top:1.5rem; display:flex; gap:1rem; justify-content:flex-end;">
             <button id="block-btn" style="padding: 6px 16px; border-radius: 6px; border: 1px solid #b0b0b0; background: #ffeaea; color:#b00; cursor:pointer;">Block user</button>
             <button onclick="closePopup()" style="padding: 6px 16px; border-radius: 6px; border: 1px solid #b0b0b0; background: #f5f7fa; cursor:pointer;">Close</button>
@@ -94,7 +103,17 @@ function showUserDetails(userId) {
                  <b>First name:</b> ${data.first_name || '-'}<br>
                  <b>Last name:</b> ${data.last_name || '-'}<br>
                  <b>Email:</b> ${data.email}<br>
-                 <b>Status:</b> ${data.status}`;
+                 <b>Status:</b> ${data.status}<br>
+                 <b>Badge:</b> ${data.badge === 'none' ? 'None' : data.badge.replace('_', ' ')}`;
+            document.getElementById('badge-select').value = data.badge;
+            document.getElementById('badge-btn').onclick = function() {
+                var badge = document.getElementById('badge-select').value;
+                fetch('/admin-dashboard/user/' + userId + '/assign-badge/', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({badge: badge})
+                }).then(() => location.reload());
+            };
             if (data.status === 'Active') {
                 document.getElementById('block-btn').style.display = '';
                 document.getElementById('block-btn').onclick = function() {
