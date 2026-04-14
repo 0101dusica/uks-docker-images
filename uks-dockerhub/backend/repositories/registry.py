@@ -1,5 +1,9 @@
+import logging
+
 import requests
 from django.conf import settings
+
+logger = logging.getLogger(__name__)
 
 
 class RegistryService:
@@ -19,7 +23,8 @@ class RegistryService:
             response = requests.get(f'{self.base_url}/v2/_catalog', timeout=5)
             response.raise_for_status()
             return response.json().get('repositories', [])
-        except requests.RequestException:
+        except requests.RequestException as exc:
+            logger.error("Registry catalog fetch failed", extra={"error": str(exc)})
             return []
 
     def get_tags(self, repo_name):
@@ -31,7 +36,8 @@ class RegistryService:
             )
             response.raise_for_status()
             return response.json().get('tags', []) or []
-        except requests.RequestException:
+        except requests.RequestException as exc:
+            logger.error("Registry tags fetch failed", extra={"repo_name": repo_name, "error": str(exc)})
             return []
 
     def get_manifest(self, repo_name, tag):
@@ -54,7 +60,8 @@ class RegistryService:
                 'size': total_size,
                 'media_type': manifest.get('mediaType', ''),
             }
-        except requests.RequestException:
+        except requests.RequestException as exc:
+            logger.error("Registry manifest fetch failed", extra={"repo_name": repo_name, "tag": tag, "error": str(exc)})
             return None
 
     def delete_manifest(self, repo_name, digest):
@@ -65,8 +72,15 @@ class RegistryService:
                 f'{self.base_url}/v2/{repo_name}/manifests/{digest}',
                 timeout=5,
             )
-            return response.status_code == 202
-        except requests.RequestException:
+            success = response.status_code == 202
+            if not success:
+                logger.warning(
+                    "Registry manifest delete returned unexpected status",
+                    extra={"repo_name": repo_name, "digest": digest, "status_code": response.status_code},
+                )
+            return success
+        except requests.RequestException as exc:
+            logger.error("Registry manifest delete failed", extra={"repo_name": repo_name, "digest": digest, "error": str(exc)})
             return False
 
     def get_tag_digest(self, repo_name, tag):
@@ -80,5 +94,6 @@ class RegistryService:
             )
             response.raise_for_status()
             return response.headers.get('Docker-Content-Digest', '')
-        except requests.RequestException:
+        except requests.RequestException as exc:
+            logger.error("Registry tag digest fetch failed", extra={"repo_name": repo_name, "tag": tag, "error": str(exc)})
             return None

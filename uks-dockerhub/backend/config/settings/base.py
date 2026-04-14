@@ -71,18 +71,30 @@ CACHES = {}
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'backend' / 'frontend' / 'static'
 
-# Logging (basic setup)
+# Logging (basic setup — file handler added in #30, ES handler in #31)
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'json': {
+            '()': 'pythonjsonlogger.jsonlogger.JsonFormatter',
+            'format': '%(asctime)s %(levelname)s %(name)s %(message)s',
+        },
+    },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
+            'formatter': 'json',
         },
     },
     'root': {
         'handlers': ['console'],
         'level': 'INFO',
+    },
+    'loggers': {
+        'frontend': {'level': 'INFO', 'propagate': True},
+        'repositories': {'level': 'INFO', 'propagate': True},
+        'users': {'level': 'INFO', 'propagate': True},
     },
 }
 

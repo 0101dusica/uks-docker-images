@@ -1,3 +1,5 @@
+import logging
+
 from django.core.cache import cache
 
 from rest_framework.views import APIView
@@ -7,6 +9,8 @@ from rest_framework import status
 from .models import Repository
 from .serializers import PublicRepositorySerializer
 from .registry import RegistryService
+
+logger = logging.getLogger(__name__)
 
 CACHE_TTL = 60 * 5  # 5 minutes
 
@@ -54,6 +58,11 @@ class RegistryCatalogView(APIView):
     def get(self, request):
         registry = RegistryService()
         repositories = registry.get_catalog()
+        if repositories is None:
+            logger.error("Failed to fetch registry catalog")
+            repositories = []
+        else:
+            logger.info("Registry catalog fetched", extra={"count": len(repositories)})
         return Response({'repositories': repositories}, status=status.HTTP_200_OK)
 
 
@@ -63,6 +72,12 @@ class RegistryTagsView(APIView):
     def get(self, request, repo_name):
         registry = RegistryService()
         tags = registry.get_tags(repo_name)
+
+        if tags is None:
+            logger.error("Failed to fetch registry tags", extra={"repo_name": repo_name})
+            tags = []
+        else:
+            logger.info("Registry tags fetched", extra={"repo_name": repo_name, "count": len(tags)})
 
         tag_details = []
         for tag in tags:
