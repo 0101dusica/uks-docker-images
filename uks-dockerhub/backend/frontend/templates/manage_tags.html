@@ -71,6 +71,10 @@
                     <span class="tag-name">{{ tag_name }}</span>
                     <span class="tag-source registry">registry</span>
                 </div>
+                <form method="post" action="{% url 'delete-registry-tag' repo.id tag_name %}" style="margin:0;">
+                    {% csrf_token %}
+                    <button type="submit" class="delete-btn">Delete</button>
+                </form>
             </div>
         {% endfor %}
     {% endif %}

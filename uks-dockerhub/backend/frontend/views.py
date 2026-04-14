@@ -402,6 +402,22 @@ def delete_tag_view(request, repo_id, tag_id):
     return HttpResponseForbidden()
 
 
+@csrf_exempt
+@login_required(login_url='login')
+def delete_registry_tag_view(request, repo_id, tag_name):
+    if request.method == 'POST':
+        repo = Repository.objects.get(id=repo_id)
+        if repo.owner != request.user:
+            return HttpResponseForbidden('You can only delete tags on your own repositories.')
+        registry = RegistryService()
+        registry_repo_name = f'{repo.owner.username}/{repo.name}'
+        digest = registry.get_tag_digest(registry_repo_name, tag_name)
+        if digest:
+            registry.delete_manifest(registry_repo_name, digest)
+        return redirect('manage-tags', repo_id=repo.id)
+    return HttpResponseForbidden()
+
+
 @login_required(login_url='login')
 def force_password_change_view(request):
     error = None
