@@ -96,6 +96,37 @@ def admin_dashboard_view(request):
     })
 
 @admin_required
+def edit_official_repository_view(request, repo_id):
+    try:
+        repo = Repository.objects.get(id=repo_id, is_official=True)
+    except Repository.DoesNotExist:
+        return HttpResponseForbidden('Official repository not found.')
+    if request.method == 'POST':
+        form = RepositoryEditForm(request.POST, instance=repo)
+        if form.is_valid():
+            form.save()
+            _invalidate_repo_cache()
+            return redirect('admin-dashboard')
+    else:
+        form = RepositoryEditForm(instance=repo)
+    return render(request, 'edit_official_repository.html', {'form': form, 'repo': repo})
+
+
+@csrf_exempt
+@admin_required
+def delete_official_repository_view(request, repo_id):
+    if request.method == 'POST':
+        try:
+            repo = Repository.objects.get(id=repo_id, is_official=True)
+            repo.delete()
+            _invalidate_repo_cache()
+            return redirect('admin-dashboard')
+        except Repository.DoesNotExist:
+            return HttpResponseForbidden('Official repository not found.')
+    return HttpResponseForbidden()
+
+
+@admin_required
 def user_details_view(request, user_id):
     try:
         user = User.objects.get(id=user_id)

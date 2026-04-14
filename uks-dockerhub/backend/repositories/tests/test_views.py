@@ -368,3 +368,77 @@ class BadgeAssignmentTests(TestCase):
         )
         data = response.json()
         self.assertEqual(data['badge'], 'sponsored_oss')
+
+
+class ManageOfficialRepositoryTests(TestCase):
+
+    def setUp(self):
+        self.client = Client()
+        self.admin = User.objects.create_user(
+            username='admin1', email='admin@example.com',
+            password='pass1234', role='admin'
+        )
+        self.user = User.objects.create_user(
+            username='regular', email='user@example.com',
+            password='pass1234', role='user'
+        )
+        self.official_repo = Repository.objects.create(
+            name='nginx', owner=self.admin, is_official=True,
+            visibility='public', description='Official Nginx'
+        )
+
+    def test_admin_can_edit_official_repo(self):
+        self.client.login(username='admin1', password='pass1234')
+        response = self.client.post(
+            reverse('edit-official-repo', args=[self.official_repo.id]),
+            {'description': 'Updated description', 'visibility': 'public'},
+        )
+        self.assertRedirects(response, reverse('admin-dashboard'))
+        self.official_repo.refresh_from_db()
+        self.assertEqual(self.official_repo.description, 'Updated description')
+
+    def test_admin_can_load_edit_page(self):
+        self.client.login(username='admin1', password='pass1234')
+        response = self.client.get(
+            reverse('edit-official-repo', args=[self.official_repo.id])
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'nginx')
+
+    def test_admin_can_delete_official_repo(self):
+        self.client.login(username='admin1', password='pass1234')
+        response = self.client.post(
+            reverse('delete-official-repo', args=[self.official_repo.id])
+        )
+        self.assertRedirects(response, reverse('admin-dashboard'))
+        self.assertFalse(Repository.objects.filter(id=self.official_repo.id).exists())
+
+    def test_regular_user_cannot_edit_official_repo(self):
+        self.client.login(username='regular', password='pass1234')
+        response = self.client.get(
+            reverse('edit-official-repo', args=[self.official_repo.id])
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_regular_user_cannot_delete_official_repo(self):
+        self.client.login(username='regular', password='pass1234')
+        response = self.client.post(
+            reverse('delete-official-repo', args=[self.official_repo.id])
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(Repository.objects.filter(id=self.official_repo.id).exists())
+
+    def test_cannot_edit_nonexistent_official_repo(self):
+        self.client.login(username='admin1', password='pass1234')
+        response = self.client.get(reverse('edit-official-repo', args=[9999]))
+        self.assertEqual(response.status_code, 403)
+
+    def test_cannot_edit_regular_repo_as_official(self):
+        regular_repo = Repository.objects.create(
+            name='myapp', owner=self.user, visibility='public'
+        )
+        self.client.login(username='admin1', password='pass1234')
+        response = self.client.get(
+            reverse('edit-official-repo', args=[regular_repo.id])
+        )
+        self.assertEqual(response.status_code, 403)
