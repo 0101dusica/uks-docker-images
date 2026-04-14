@@ -21,6 +21,9 @@ __pycache__/
 # Node
 node_modules/
 
+# Superadmin initial password
+superadmin_initial_password.txt
+
 # OS
 .DS_Store
 Thumbs.db

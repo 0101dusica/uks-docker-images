@@ -106,11 +106,13 @@
     {% block extra_head %}{% endblock %}
 </head>
     <body>
+        {% block logout_button %}
         {% if request.user.is_authenticated %}
         <div class="logout-link">
             <a href="{% url 'logout' %}">Logout</a>
         </div>
         {% endif %}
+        {% endblock %}
     {% block content %}{% endblock %}
 </body>
 </html>
