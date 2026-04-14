@@ -75,6 +75,17 @@ def login_success_view(request):
 @admin_required
 def admin_dashboard_view(request):
     users = User.objects.filter(role='user')
+
+    user_search = request.GET.get('user_search', '').strip()
+    if user_search:
+        from django.db.models import Q
+        users = users.filter(
+            Q(username__icontains=user_search) |
+            Q(email__icontains=user_search) |
+            Q(first_name__icontains=user_search) |
+            Q(last_name__icontains=user_search)
+        )
+
     official_repos = Repository.objects.filter(is_official=True).order_by('-created_at')
     official_form_error = None
 
@@ -91,6 +102,7 @@ def admin_dashboard_view(request):
 
     return render(request, 'admin_dashboard.html', {
         'users': users,
+        'user_search': user_search,
         'official_repos': official_repos,
         'official_form': form,
         'official_form_error': official_form_error,
@@ -179,6 +191,23 @@ def block_user_view(request, user_id):
 def superadmin_dashboard_view(request):
     users = User.objects.filter(role='user')
     admins = User.objects.filter(role='admin')
+
+    user_search = request.GET.get('user_search', '').strip()
+    if user_search:
+        from django.db.models import Q
+        users = users.filter(
+            Q(username__icontains=user_search) |
+            Q(email__icontains=user_search) |
+            Q(first_name__icontains=user_search) |
+            Q(last_name__icontains=user_search)
+        )
+        admins = admins.filter(
+            Q(username__icontains=user_search) |
+            Q(email__icontains=user_search) |
+            Q(first_name__icontains=user_search) |
+            Q(last_name__icontains=user_search)
+        )
+
     admin_form_error = None
     if request.method == 'POST' and 'add_admin' in request.POST:
         # Dodavanje novog admina
@@ -196,6 +225,7 @@ def superadmin_dashboard_view(request):
     return render(request, 'superadmin_dashboard.html', {
         'users': users,
         'admins': admins,
+        'user_search': user_search,
         'admin_form': form,
         'admin_form_error': admin_form_error,
     })

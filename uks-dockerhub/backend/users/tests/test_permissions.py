@@ -60,6 +60,45 @@ class AdminPermissionTests(TestCase):
         self.assertEqual(response.status_code, 404)
 
 
+class AdminUserSearchTests(TestCase):
+
+    def setUp(self):
+        self.client = Client()
+        self.admin = User.objects.create_user(
+            username='admin1', email='admin@example.com',
+            password='pass1234', role='admin'
+        )
+        User.objects.create_user(
+            username='alice', email='alice@example.com',
+            password='pass1234', role='user', first_name='Alice'
+        )
+        User.objects.create_user(
+            username='bob', email='bob@test.com',
+            password='pass1234', role='user', first_name='Bob'
+        )
+        self.client.login(username='admin1', password='pass1234')
+
+    def test_search_by_username(self):
+        response = self.client.get(reverse('admin-dashboard') + '?user_search=alice')
+        self.assertContains(response, 'alice')
+        self.assertNotContains(response, 'bob')
+
+    def test_search_by_email(self):
+        response = self.client.get(reverse('admin-dashboard') + '?user_search=test.com')
+        self.assertContains(response, 'bob')
+        self.assertNotContains(response, 'alice')
+
+    def test_search_by_first_name(self):
+        response = self.client.get(reverse('admin-dashboard') + '?user_search=Bob')
+        self.assertContains(response, 'bob')
+        self.assertNotContains(response, 'alice')
+
+    def test_empty_search_shows_all(self):
+        response = self.client.get(reverse('admin-dashboard') + '?user_search=')
+        self.assertContains(response, 'alice')
+        self.assertContains(response, 'bob')
+
+
 class SuperadminPermissionTests(TestCase):
 
     def setUp(self):
