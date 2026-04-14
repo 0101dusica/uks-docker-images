@@ -114,6 +114,72 @@ class PublicRepositoriesTests(TestCase):
         self.assertEqual(response.json()['count'], 1)
         self.assertEqual(response.json()['results'][0]['name'], 'apirepo')
 
+    def test_search_by_name(self):
+        Repository.objects.create(name='django-app', owner=self.user, visibility='public')
+        Repository.objects.create(name='flask-app', owner=self.user, visibility='public')
+        response = self.client.get(reverse('public-repositories') + '?search=django')
+        self.assertContains(response, 'django-app')
+        self.assertNotContains(response, 'flask-app')
+
+    def test_search_by_description(self):
+        Repository.objects.create(
+            name='repo1', owner=self.user, visibility='public',
+            description='A machine learning project'
+        )
+        Repository.objects.create(
+            name='repo2', owner=self.user, visibility='public',
+            description='A web framework'
+        )
+        response = self.client.get(reverse('public-repositories') + '?search=machine')
+        self.assertContains(response, 'repo1')
+        self.assertNotContains(response, 'repo2')
+
+    def test_sort_by_stars(self):
+        Repository.objects.create(name='unpopular', owner=self.user, visibility='public', stars=1)
+        Repository.objects.create(name='popular', owner=self.user, visibility='public', stars=100)
+        response = self.client.get(reverse('public-repositories') + '?sort=stars')
+        content = response.content.decode()
+        self.assertTrue(content.index('popular') < content.index('unpopular'))
+
+    def test_sort_by_name(self):
+        Repository.objects.create(name='zebra', owner=self.user, visibility='public')
+        Repository.objects.create(name='alpha', owner=self.user, visibility='public')
+        response = self.client.get(reverse('public-repositories') + '?sort=name')
+        content = response.content.decode()
+        self.assertTrue(content.index('alpha') < content.index('zebra'))
+
+    def test_filter_by_official(self):
+        Repository.objects.create(name='official-repo', owner=self.user, visibility='public', is_official=True)
+        Repository.objects.create(name='normal-repo', owner=self.user, visibility='public', is_official=False)
+        response = self.client.get(reverse('public-repositories') + '?badge=official')
+        self.assertContains(response, 'official-repo')
+        self.assertNotContains(response, 'normal-repo')
+
+    def test_filter_by_verified_publisher(self):
+        verified_user = User.objects.create_user(
+            username='verified', email='verified@example.com',
+            password='pass1234', badge='verified_publisher'
+        )
+        Repository.objects.create(name='verified-repo', owner=verified_user, visibility='public')
+        Repository.objects.create(name='normal-repo', owner=self.user, visibility='public')
+        response = self.client.get(reverse('public-repositories') + '?badge=verified_publisher')
+        self.assertContains(response, 'verified-repo')
+        self.assertNotContains(response, 'normal-repo')
+
+    def test_api_search(self):
+        Repository.objects.create(name='django-app', owner=self.user, visibility='public')
+        Repository.objects.create(name='flask-app', owner=self.user, visibility='public')
+        response = self.client.get('/api/repositories/public/?search=django')
+        self.assertEqual(response.json()['count'], 1)
+        self.assertEqual(response.json()['results'][0]['name'], 'django-app')
+
+    def test_api_filter_by_badge(self):
+        Repository.objects.create(name='official', owner=self.user, visibility='public', is_official=True)
+        Repository.objects.create(name='normal', owner=self.user, visibility='public')
+        response = self.client.get('/api/repositories/public/?badge=official')
+        self.assertEqual(response.json()['count'], 1)
+        self.assertEqual(response.json()['results'][0]['name'], 'official')
+
 
 class StarTests(TestCase):
 

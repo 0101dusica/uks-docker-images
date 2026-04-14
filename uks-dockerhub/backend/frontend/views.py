@@ -181,7 +181,29 @@ def superadmin_admin_block_view(request, admin_id):
     return HttpResponseForbidden()
 
 def public_repositories_view(request):
-    repositories = Repository.objects.filter(visibility='public').order_by('-created_at')
+    repositories = Repository.objects.filter(visibility='public')
+
+    search = request.GET.get('search', '').strip()
+    if search:
+        from django.db.models import Q
+        repositories = repositories.filter(
+            Q(name__icontains=search) | Q(description__icontains=search)
+        )
+
+    badge_filter = request.GET.get('badge', '').strip()
+    if badge_filter == 'official':
+        repositories = repositories.filter(is_official=True)
+    elif badge_filter in ('verified_publisher', 'sponsored_oss'):
+        repositories = repositories.filter(owner__badge=badge_filter)
+
+    sort = request.GET.get('sort', 'newest')
+    if sort == 'stars':
+        repositories = repositories.order_by('-stars', '-created_at')
+    elif sort == 'name':
+        repositories = repositories.order_by('name')
+    else:
+        repositories = repositories.order_by('-created_at')
+
     starred_ids = set()
     if request.user.is_authenticated:
         starred_ids = set(
@@ -191,6 +213,9 @@ def public_repositories_view(request):
     return render(request, 'public_repositories.html', {
         'repositories': repositories,
         'starred_ids': starred_ids,
+        'search': search,
+        'badge_filter': badge_filter,
+        'sort': sort,
     })
 
 
