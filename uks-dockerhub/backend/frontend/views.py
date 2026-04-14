@@ -3,6 +3,7 @@ from django.core.cache import cache
 
 from repositories.forms import RepositoryCreateForm, RepositoryEditForm, OfficialRepositoryCreateForm
 from repositories.models import Repository, Star
+from repositories.registry import RegistryService
 from tags.models import Tag
 
 
@@ -375,7 +376,18 @@ def manage_tags_view(request, repo_id):
             Tag.objects.create(repository=repo, name=tag_name)
             return redirect('manage-tags', repo_id=repo.id)
     tags = Tag.objects.filter(repository=repo).order_by('-created_at')
-    return render(request, 'manage_tags.html', {'repo': repo, 'tags': tags, 'error': error})
+
+    # Fetch tags from container registry
+    registry = RegistryService()
+    registry_repo_name = f'{repo.owner.username}/{repo.name}'
+    registry_tags = registry.get_tags(registry_repo_name)
+
+    return render(request, 'manage_tags.html', {
+        'repo': repo,
+        'tags': tags,
+        'registry_tags': registry_tags,
+        'error': error,
+    })
 
 
 @csrf_exempt
