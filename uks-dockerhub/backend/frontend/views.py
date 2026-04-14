@@ -1,4 +1,5 @@
 from django.contrib.auth import login, logout
+from django.core.cache import cache
 
 from repositories.forms import RepositoryCreateForm, RepositoryEditForm
 from repositories.models import Repository, Star
@@ -8,6 +9,10 @@ from tags.models import Tag
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseForbidden
 from django.shortcuts import render, redirect
+
+
+def _invalidate_repo_cache():
+    cache.delete_pattern('public_repos:*')
 from django.views.decorators.csrf import csrf_exempt
 
 from users.forms import CustomUserCreationForm, CustomLoginForm
@@ -231,6 +236,7 @@ def create_repository_view(request):
         form = RepositoryCreateForm(request.POST, owner=request.user)
         if form.is_valid():
             form.save()
+            _invalidate_repo_cache()
             return redirect('my-repositories')
     else:
         form = RepositoryCreateForm(owner=request.user)
@@ -246,6 +252,7 @@ def edit_repository_view(request, repo_id):
         form = RepositoryEditForm(request.POST, instance=repo)
         if form.is_valid():
             form.save()
+            _invalidate_repo_cache()
             return redirect('my-repositories')
     else:
         form = RepositoryEditForm(instance=repo)
@@ -260,6 +267,7 @@ def delete_repository_view(request, repo_id):
         if repo.owner != request.user:
             return HttpResponseForbidden('You can only delete your own repositories.')
         repo.delete()
+        _invalidate_repo_cache()
         return redirect('my-repositories')
     return HttpResponseForbidden()
 
@@ -276,6 +284,7 @@ def toggle_star_view(request, repo_id):
         else:
             repo.stars = Star.objects.filter(repository=repo).count()
         repo.save()
+        _invalidate_repo_cache()
         return redirect('public-repositories')
     return HttpResponseForbidden()
 
