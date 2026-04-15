@@ -1,5 +1,9 @@
+import logging
+
 from django.contrib.auth import login, logout
 from django.core.cache import cache
+
+logger = logging.getLogger(__name__)
 
 from repositories.forms import RepositoryCreateForm, RepositoryEditForm, OfficialRepositoryCreateForm
 from repositories.models import Repository, Star
@@ -22,6 +26,8 @@ from users.permissions import admin_required, superadmin_required
 
 
 def logout_view(request):
+    if request.user.is_authenticated:
+        logger.info("User logged out", extra={"username": request.user.username, "user_id": str(request.user.id)})
     logout(request)
     return redirect('login')
 
@@ -36,10 +42,18 @@ def login_view(request):
             try:
                 user = User.objects.get(username=username)
                 if not user.is_active:
+                    logger.warning(
+                        "Login attempt by blocked user",
+                        extra={"username": user.username, "user_id": str(user.id)},
+                    )
                     return render(request, 'account_blocked.html')
                 from django.contrib.auth.hashers import check_password
                 if check_password(password, user.password):
                     login(request, user)
+                    logger.info(
+                        "User logged in",
+                        extra={"username": user.username, "user_id": str(user.id), "role": user.role},
+                    )
                     if user.role == 'admin':
                         return redirect('admin-dashboard')
                     elif user.role == 'superadmin':
@@ -47,8 +61,10 @@ def login_view(request):
                     else:
                         return redirect('login-success')
                 else:
+                    logger.warning("Failed login attempt", extra={"username_attempted": username})
                     error = "Invalid username or password."
             except User.DoesNotExist:
+                logger.warning("Failed login attempt", extra={"username_attempted": username})
                 error = "Invalid username or password."
         else:
             error = "Invalid username or password."
@@ -60,7 +76,8 @@ def registration_view(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
         if form.is_valid():
-            form.save()
+            user = form.save()
+            logger.info("New user registered", extra={"username": user.username, "user_id": str(user.id)})
             return redirect('registration-success')
     else:
         form = CustomUserCreationForm()
@@ -92,7 +109,11 @@ def admin_dashboard_view(request):
     if request.method == 'POST' and 'create_official' in request.POST:
         form = OfficialRepositoryCreateForm(request.POST)
         if form.is_valid():
-            form.save(owner=request.user)
+            repo = form.save(owner=request.user)
+            logger.info(
+                "Official repository created",
+                extra={"repo_id": str(repo.id), "repo_name": repo.name, "admin_id": str(request.user.id)},
+            )
             _invalidate_repo_cache()
             return redirect('admin-dashboard')
         else:
@@ -118,6 +139,10 @@ def edit_official_repository_view(request, repo_id):
         form = RepositoryEditForm(request.POST, instance=repo)
         if form.is_valid():
             form.save()
+            logger.info(
+                "Official repository edited",
+                extra={"repo_id": str(repo.id), "repo_name": repo.name, "admin_id": str(request.user.id)},
+            )
             _invalidate_repo_cache()
             return redirect('admin-dashboard')
     else:
@@ -131,6 +156,10 @@ def delete_official_repository_view(request, repo_id):
     if request.method == 'POST':
         try:
             repo = Repository.objects.get(id=repo_id, is_official=True)
+            logger.info(
+                "Official repository deleted",
+                extra={"repo_id": str(repo.id), "repo_name": repo.name, "admin_id": str(request.user.id)},
+            )
             repo.delete()
             _invalidate_repo_cache()
             return redirect('admin-dashboard')
@@ -168,6 +197,10 @@ def assign_badge_view(request, user_id):
                 return JsonResponse({'error': 'Invalid badge'}, status=400)
             user.badge = badge
             user.save()
+            logger.info(
+                "Badge assigned to user",
+                extra={"target_user_id": str(user.id), "badge": badge, "admin_id": str(request.user.id)},
+            )
             _invalidate_repo_cache()
             return JsonResponse({'success': True, 'badge': user.badge})
         except User.DoesNotExist:
@@ -182,6 +215,10 @@ def block_user_view(request, user_id):
             user = User.objects.get(id=user_id)
             user.is_active = False
             user.save()
+            logger.info(
+                "User blocked",
+                extra={"target_user_id": str(user.id), "target_username": user.username, "admin_id": str(request.user.id)},
+            )
             return JsonResponse({'success': True})
         except User.DoesNotExist:
             return JsonResponse({'error': 'User not found'}, status=404)
@@ -217,6 +254,10 @@ def superadmin_dashboard_view(request):
             new_admin.role = 'admin'
             new_admin.is_active = True
             new_admin.save()
+            logger.info(
+                "New admin created",
+                extra={"new_admin_id": str(new_admin.id), "new_admin_username": new_admin.username, "superadmin_id": str(request.user.id)},
+            )
             return redirect('superadmin-dashboard')
         else:
             admin_form_error = form.errors.as_text()
@@ -253,6 +294,10 @@ def superadmin_user_block_view(request, user_id):
             user = User.objects.get(id=user_id, role='user')
             user.is_active = False
             user.save()
+            logger.info(
+                "User blocked by superadmin",
+                extra={"target_user_id": str(user.id), "target_username": user.username, "superadmin_id": str(request.user.id)},
+            )
             return JsonResponse({'success': True})
         except User.DoesNotExist:
             return JsonResponse({'error': 'User not found'}, status=404)
@@ -281,6 +326,10 @@ def superadmin_admin_block_view(request, admin_id):
             admin = User.objects.get(id=admin_id, role='admin')
             admin.is_active = False
             admin.save()
+            logger.info(
+                "Admin blocked by superadmin",
+                extra={"target_admin_id": str(admin.id), "target_username": admin.username, "superadmin_id": str(request.user.id)},
+            )
             return JsonResponse({'success': True})
         except User.DoesNotExist:
             return JsonResponse({'error': 'Admin not found'}, status=404)
@@ -336,7 +385,11 @@ def create_repository_view(request):
     if request.method == 'POST':
         form = RepositoryCreateForm(request.POST, owner=request.user)
         if form.is_valid():
-            form.save()
+            repo = form.save()
+            logger.info(
+                "Repository created",
+                extra={"repo_id": str(repo.id), "repo_name": repo.name, "owner_id": str(request.user.id)},
+            )
             _invalidate_repo_cache()
             return redirect('my-repositories')
     else:
@@ -348,11 +401,19 @@ def create_repository_view(request):
 def edit_repository_view(request, repo_id):
     repo = Repository.objects.get(id=repo_id)
     if repo.owner != request.user:
+        logger.warning(
+            "Unauthorized repository edit attempt",
+            extra={"repo_id": str(repo_id), "user_id": str(request.user.id)},
+        )
         return HttpResponseForbidden('You can only edit your own repositories.')
     if request.method == 'POST':
         form = RepositoryEditForm(request.POST, instance=repo)
         if form.is_valid():
             form.save()
+            logger.info(
+                "Repository edited",
+                extra={"repo_id": str(repo.id), "repo_name": repo.name, "owner_id": str(request.user.id)},
+            )
             _invalidate_repo_cache()
             return redirect('my-repositories')
     else:
@@ -366,7 +427,15 @@ def delete_repository_view(request, repo_id):
     if request.method == 'POST':
         repo = Repository.objects.get(id=repo_id)
         if repo.owner != request.user:
+            logger.warning(
+                "Unauthorized repository delete attempt",
+                extra={"repo_id": str(repo_id), "user_id": str(request.user.id)},
+            )
             return HttpResponseForbidden('You can only delete your own repositories.')
+        logger.info(
+            "Repository deleted",
+            extra={"repo_id": str(repo.id), "repo_name": repo.name, "owner_id": str(request.user.id)},
+        )
         repo.delete()
         _invalidate_repo_cache()
         return redirect('my-repositories')
@@ -382,8 +451,16 @@ def toggle_star_view(request, repo_id):
         if not created:
             star.delete()
             repo.stars = Star.objects.filter(repository=repo).count()
+            logger.info(
+                "Repository unstarred",
+                extra={"repo_id": str(repo.id), "user_id": str(request.user.id)},
+            )
         else:
             repo.stars = Star.objects.filter(repository=repo).count()
+            logger.info(
+                "Repository starred",
+                extra={"repo_id": str(repo.id), "user_id": str(request.user.id)},
+            )
         repo.save()
         _invalidate_repo_cache()
         return redirect('public-repositories')
@@ -426,7 +503,15 @@ def delete_tag_view(request, repo_id, tag_id):
     if request.method == 'POST':
         repo = Repository.objects.get(id=repo_id)
         if repo.owner != request.user:
+            logger.warning(
+                "Unauthorized tag delete attempt",
+                extra={"repo_id": str(repo_id), "tag_id": str(tag_id), "user_id": str(request.user.id)},
+            )
             return HttpResponseForbidden('You can only delete tags on your own repositories.')
+        logger.info(
+            "Tag deleted",
+            extra={"repo_id": str(repo.id), "tag_id": str(tag_id), "owner_id": str(request.user.id)},
+        )
         Tag.objects.filter(id=tag_id, repository=repo).delete()
         return redirect('manage-tags', repo_id=repo.id)
     return HttpResponseForbidden()
@@ -438,12 +523,20 @@ def delete_registry_tag_view(request, repo_id, tag_name):
     if request.method == 'POST':
         repo = Repository.objects.get(id=repo_id)
         if repo.owner != request.user:
+            logger.warning(
+                "Unauthorized registry tag delete attempt",
+                extra={"repo_id": str(repo_id), "tag_name": tag_name, "user_id": str(request.user.id)},
+            )
             return HttpResponseForbidden('You can only delete tags on your own repositories.')
         registry = RegistryService()
         registry_repo_name = f'{repo.owner.username}/{repo.name}'
         digest = registry.get_tag_digest(registry_repo_name, tag_name)
         if digest:
             registry.delete_manifest(registry_repo_name, digest)
+            logger.info(
+                "Registry tag deleted",
+                extra={"repo_id": str(repo.id), "tag_name": tag_name, "owner_id": str(request.user.id)},
+            )
         return redirect('manage-tags', repo_id=repo.id)
     return HttpResponseForbidden()
 
@@ -494,6 +587,10 @@ def force_password_change_view(request):
             request.user.must_change_password = False
             request.user.save()
             login(request, request.user)
+            logger.info(
+                "User changed password",
+                extra={"user_id": str(request.user.id), "username": request.user.username},
+            )
             if request.user.role == 'superadmin':
                 return redirect('superadmin-dashboard')
             elif request.user.role == 'admin':
