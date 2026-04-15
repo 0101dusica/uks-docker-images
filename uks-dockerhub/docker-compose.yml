@@ -13,6 +13,7 @@ services:
       - registry
     volumes:
       - ./backend:/app
+      - log_data:/app/logs
     expose:
       - "8000"
 
@@ -67,4 +68,5 @@ services:
 volumes:
   postgres_data:
   registry_data:
+  log_data:
   # esdata:
