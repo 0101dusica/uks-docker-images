@@ -13,6 +13,34 @@ logger = logging.getLogger(__name__)
 LOG_LEVELS = ['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL']
 
 
+def _fetch_stats(es):
+    """
+    Fetch total log count and per-level breakdown from Elasticsearch.
+
+    Uses a terms aggregation on the 'levelname' keyword field.
+    Returns a dict like: {'total': 500, 'by_level': {'INFO': 300, 'ERROR': 50, ...}}
+    Returns None if ES is unreachable.
+    """
+    body = {
+        'size': 0,
+        'aggs': {
+            'by_level': {
+                'terms': {'field': 'levelname', 'size': 10}
+            }
+        }
+    }
+    try:
+        response = es.search(index='django-logs', body=body)
+        total = response['hits']['total']['value']
+        by_level = {
+            bucket['key']: bucket['doc_count']
+            for bucket in response['aggregations']['by_level']['buckets']
+        }
+        return {'total': total, 'by_level': by_level}
+    except Exception:
+        return None
+
+
 def build_es_query(date_from, date_to, level, text, parsed_query):
     """Build an Elasticsearch request body from the search form fields."""
     must = []
@@ -77,7 +105,11 @@ def analytics_search_view(request):
         'query': '',
         'log_levels': LOG_LEVELS,
         'searched': False,
+        'stats': None,
     }
+
+    es = Elasticsearch(settings.ELASTICSEARCH_URL, request_timeout=10)
+    context['stats'] = _fetch_stats(es)
 
     if request.method == 'POST':
         date_from = request.POST.get('date_from', '').strip()
@@ -110,7 +142,6 @@ def analytics_search_view(request):
         body['size'] = 100
 
         try:
-            es = Elasticsearch(settings.ELASTICSEARCH_URL, request_timeout=10)
             response = es.search(index='django-logs', body=body)
 
             hits = response['hits']['hits']

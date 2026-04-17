@@ -155,6 +155,8 @@ class AnalyticsSearchViewTests(TestCase):
         self.client.login(username='testadmin', password='adminpass123')
         self.client.post(self.url, {'level': 'ERROR'})
 
+        # search is called twice: first for dashboard stats, then for the actual query.
+        # call_args returns the last call, which is the log search.
         call_kwargs = mock_es.search.call_args
         body = call_kwargs.kwargs.get('body') or call_kwargs[1].get('body')
         must = body['query']['bool']['must']
@@ -162,12 +164,17 @@ class AnalyticsSearchViewTests(TestCase):
 
     @patch('analytics.views.Elasticsearch')
     def test_post_invalid_query_returns_query_error_no_es_call(self, MockES):
+        mock_es = MagicMock()
+        MockES.return_value = mock_es
+        mock_es.search.return_value = self._make_es_response()
+
         self.client.login(username='testadmin', password='adminpass123')
         response = self.client.post(self.url, {'query': 'level =='})
 
         self.assertEqual(response.status_code, 200)
         self.assertIsNotNone(response.context['query_error'])
-        MockES.assert_not_called()
+        # ES client is created for stats, but the actual log search must not run.
+        mock_es.search.assert_called_once()
 
     @patch('analytics.views.Elasticsearch')
     def test_post_es_unavailable_sets_error_context(self, MockES):
@@ -201,6 +208,43 @@ class AnalyticsSearchViewTests(TestCase):
         self.assertEqual(response.context['text'], 'login')
         self.assertEqual(response.context['date_from'], '2026-01-01T00:00')
         self.assertEqual(response.context['date_to'], '2026-12-31T23:59')
+
+    @patch('analytics.views.Elasticsearch')
+    def test_get_stats_populated_when_es_available(self, MockES):
+        mock_es = MagicMock()
+        MockES.return_value = mock_es
+        mock_es.search.return_value = {
+            'hits': {'total': {'value': 42}},
+            'aggregations': {
+                'by_level': {
+                    'buckets': [
+                        {'key': 'INFO', 'doc_count': 30},
+                        {'key': 'ERROR', 'doc_count': 12},
+                    ]
+                }
+            },
+        }
+
+        self.client.login(username='testadmin', password='adminpass123')
+        response = self.client.get(self.url)
+
+        stats = response.context['stats']
+        self.assertIsNotNone(stats)
+        self.assertEqual(stats['total'], 42)
+        self.assertEqual(stats['by_level']['INFO'], 30)
+        self.assertEqual(stats['by_level']['ERROR'], 12)
+
+    @patch('analytics.views.Elasticsearch')
+    def test_get_stats_none_when_es_unavailable(self, MockES):
+        mock_es = MagicMock()
+        MockES.return_value = mock_es
+        mock_es.search.side_effect = Exception('ES down')
+
+        self.client.login(username='testadmin', password='adminpass123')
+        response = self.client.get(self.url)
+
+        self.assertIsNone(response.context['stats'])
+        self.assertEqual(response.status_code, 200)
 
     @patch('analytics.views.Elasticsearch')
     def test_post_no_results_sets_empty_list(self, MockES):
