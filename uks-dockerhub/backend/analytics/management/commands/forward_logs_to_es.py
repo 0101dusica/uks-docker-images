@@ -30,6 +30,23 @@ class Command(BaseCommand):
     def _write_cursor(self, offset: int):
         self._cursor_path().write_text(str(offset))
 
+    _INDEX_MAPPING = {
+        'mappings': {
+            'properties': {
+                'asctime':   {'type': 'keyword'},
+                'levelname': {'type': 'keyword'},
+                'name':      {'type': 'text'},
+                'message':   {'type': 'text'},
+            }
+        }
+    }
+
+    @staticmethod
+    def _ensure_index(es: Elasticsearch) -> None:
+        if not es.indices.exists(index='django-logs'):
+            es.indices.create(index='django-logs', body=Command._INDEX_MAPPING)
+            logger.info('Created Elasticsearch index django-logs with explicit mapping.')
+
     def handle(self, *args, **options):
         log_path = self._log_path()
 
@@ -78,13 +95,14 @@ class Command(BaseCommand):
             return
 
         es = Elasticsearch(settings.ELASTICSEARCH_URL, request_timeout=10)
+        self._ensure_index(es)
         try:
             success, failed = bulk(es, docs, raise_on_error=False, stats_only=False)
         except (ESConnectionError, Exception) as exc:
             logger.warning(
                 'Elasticsearch unavailable (%s); will retry on next run.', exc
             )
-            return  # do NOT advance cursor — retry next time
+            return
 
         for item in failed:
             logger.warning('Failed to index document: %s', item)
