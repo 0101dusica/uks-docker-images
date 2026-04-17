@@ -72,8 +72,8 @@ STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'backend' / 'frontend' / 'static'
 
 # Logging
-_LOG_DIR = Path(os.environ.get('LOG_DIR', BASE_DIR / 'logs'))
-_LOG_DIR.mkdir(parents=True, exist_ok=True)
+LOG_DIR = Path(os.environ.get('LOG_DIR', BASE_DIR / 'logs'))
+LOG_DIR.mkdir(parents=True, exist_ok=True)
 
 LOGGING = {
     'version': 1,
@@ -91,7 +91,7 @@ LOGGING = {
         },
         'file': {
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': str(_LOG_DIR / 'django.log'),
+            'filename': str(LOG_DIR / 'django.log'),
             'maxBytes': 10485760,  # 10 MB
             'backupCount': 5,
             'formatter': 'json',
@@ -111,5 +111,5 @@ LOGGING = {
 # Container Registry
 REGISTRY_URL = os.environ.get('REGISTRY_URL', 'http://registry:5000')
 
-# Placeholder for Elasticsearch connection
-# ELASTICSEARCH_DSL = {}
+# Elasticsearch
+ELASTICSEARCH_URL = os.environ.get('ELASTICSEARCH_URL', 'http://elasticsearch:9200')
