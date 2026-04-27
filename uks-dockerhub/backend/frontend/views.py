@@ -1,5 +1,5 @@
 from django.contrib.auth import login, logout
-
+from django.db.models import Q
 from repositories.models import Repository
 
 
@@ -179,9 +179,22 @@ def superadmin_admin_block_view(request, admin_id):
     return HttpResponseForbidden()
 
 def public_repositories_view(request):
-    repositories = Repository.objects.filter(visibility='public').order_by('-created_at')
-    return render(request, 'public_repositories.html', {'repositories': repositories})
+    query = request.GET.get('q', '').strip()
+    repositories = Repository.objects.filter(visibility='public')
 
+    if query:
+        repositories = repositories.filter(
+            Q(name__icontains=query) |
+            Q(description__icontains=query)
+        )
+        repositories = repositories.order_by('-stars', '-created_at')
+    else:
+        repositories = repositories.order_by('-created_at')
+
+    return render(request, 'public_repositories.html', {
+        'repositories': repositories,
+        'query': query
+    })
 
 @login_required(login_url='login')
 def force_password_change_view(request):

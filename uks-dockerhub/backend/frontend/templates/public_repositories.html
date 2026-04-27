@@ -4,6 +4,7 @@
 <style>
     body { align-items: flex-start; padding-top: 40px; }
     .repo-container { width: 700px; max-width: 95vw; }
+    .search-container {width: 700px; max-width: 75vw;}
     .repo-container h1 { color: #2d3a4b; text-align: center; margin-bottom: 1.5rem; }
     .repo { background: #fff; border: 1px solid #d1d9e6; border-radius: 12px; padding: 16px 20px; margin-bottom: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
     .repo h3 { margin: 0 0 6px; color: #2d3a4b; }
@@ -16,8 +17,25 @@
 {% endblock %}
 {% block content %}
 <div class="repo-container">
-    <h1>Public Repositories</h1>
 
+    <h1>Public Repositories</h1>
+    <div class="search-container">
+    <form method="get" style="display:flex; gap:8px; margin-bottom:20px;">
+    <input 
+        type="search" 
+        name="q" 
+        placeholder="Search repositories..."
+       value="{{ query|default:'' }}" 
+         style="
+            flex:1;
+            padding:10px 12px;
+            border:1px solid #ddd;
+            border-radius:6px;
+            outline:none;
+        "
+    >
+</form>
+</div>
     {% if repositories %}
         {% for repo in repositories %}
             <div class="repo">
