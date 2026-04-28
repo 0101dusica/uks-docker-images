@@ -54,7 +54,7 @@ class PublicRepositorySearchTest(TestCase):
         )
 
     def test_view_returns_only_public_repositories(self):
-        response = self.client.get(reverse('public_repositories'))
+        response = self.client.get(reverse('public-repositories'))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "nginx")
@@ -62,32 +62,32 @@ class PublicRepositorySearchTest(TestCase):
         self.assertNotContains(response, "secret")
 
     def test_search_by_name(self):
-        response = self.client.get(reverse('public_repositories'), {'q': 'nginx'})
+        response = self.client.get(reverse('public-repositories'), {'q': 'nginx'})
 
         self.assertContains(response, "nginx")
         self.assertNotContains(response, "redis")
 
     def test_search_by_description(self):
-        response = self.client.get(reverse('public_repositories'), {'q': 'cache'})
+        response = self.client.get(reverse('public-repositories'), {'q': 'cache'})
 
         self.assertContains(response, "redis")
         self.assertNotContains(response, "nginx")
 
     def test_search_no_results(self):
-        response = self.client.get(reverse('public_repositories'), {'q': 'unknown'})
+        response = self.client.get(reverse('public-repositories'), {'q': 'unknown'})
 
         self.assertNotContains(response, "nginx")
         self.assertNotContains(response, "redis")
         self.assertContains(response, "No public repositories found.")
 
     def test_empty_query_returns_all(self):
-        response = self.client.get(reverse('public_repositories'), {'q': ''})
+        response = self.client.get(reverse('public-repositories'), {'q': ''})
 
         self.assertContains(response, "nginx")
         self.assertContains(response, "redis")
 
     def test_ordering_by_stars_when_searching(self):
-        response = self.client.get(reverse('public_repositories'), {'q': 'e'})
+        response = self.client.get(reverse('public-repositories'), {'q': 'e'})
 
         repos = list(response.context['repositories'])
 
