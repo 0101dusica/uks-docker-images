@@ -1,8 +1,74 @@
 {% extends "base.html" %}
 {% block title %}Admin Dashboard{% endblock %}
+{% block extra_head %}
+<style>
+    .dashboard-section { min-width: 600px; margin-bottom: 2rem; }
+    .official-badge { background: #1a7f37; color: #fff; font-size: 12px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; }
+    .repo-item { background: #f5f7fa; border: 1px solid #d1d9e6; border-radius: 8px; padding: 12px 16px; margin-bottom: 8px; }
+    .repo-item h4 { margin: 0 0 4px; }
+    .repo-item p { margin: 0; color: #666; font-size: 14px; }
+    .form-row { margin-bottom: 12px; }
+    .form-row label { display: block; margin-bottom: 4px; font-weight: 600; }
+    .form-row input, .form-row textarea { width: 100%; padding: 8px; border: 1px solid #d1d9e6; border-radius: 6px; box-sizing: border-box; }
+    .btn-create { padding: 8px 20px; background: #1a7f37; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
+    .btn-create:hover { background: #15692d; }
+    .error-text { color: #b00; font-size: 13px; margin-top: 6px; }
+</style>
+{% endblock %}
 {% block content %}
-<div class="form-box" style="min-width:600px;">
-    <h2 style="margin-bottom: 2rem;">Users</h2>
+<div class="form-box dashboard-section">
+    <h2 style="margin-bottom: 1.5rem;">Official Repositories</h2>
+
+    <h3>Create Official Repository</h3>
+    <form method="post" action="{% url 'admin-dashboard' %}">
+        {% csrf_token %}
+        <input type="hidden" name="create_official" value="1">
+        <div class="form-row">
+            <label for="id_name">Repository Name</label>
+            {{ official_form.name }}
+        </div>
+        <div class="form-row">
+            <label for="id_description">Description</label>
+            {{ official_form.description }}
+        </div>
+        <button type="submit" class="btn-create">Create Official Repository</button>
+        {% if official_form_error %}
+            <p class="error-text">{{ official_form_error }}</p>
+        {% endif %}
+    </form>
+
+    <hr style="margin: 1.5rem 0;">
+
+    <h3>Existing Official Repositories</h3>
+    {% if official_repos %}
+        {% for repo in official_repos %}
+            <div class="repo-item" style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <div>
+                    <h4>{{ repo.name }} <span class="official-badge">Docker Official Image</span></h4>
+                    <p>{{ repo.description|default:"No description." }}</p>
+                    <p style="font-size: 12px; color: #999; margin-top: 4px;">Created: {{ repo.created_at|date:"Y-m-d H:i" }} | Stars: {{ repo.stars }}</p>
+                </div>
+                <div style="display:flex; gap:8px; flex-shrink:0; margin-left:16px;">
+                    <a href="{% url 'edit-official-repo' repo.id %}" style="padding:4px 12px; border-radius:6px; border:1px solid #d1d9e6; background:#f5f7fa; text-decoration:none; color:#2d3a4b; font-size:13px;">Edit</a>
+                    <form method="post" action="{% url 'delete-official-repo' repo.id %}" style="margin:0;" onsubmit="return confirm('Delete this official repository?');">
+                        {% csrf_token %}
+                        <button type="submit" style="padding:4px 12px; border-radius:6px; border:1px solid #b0b0b0; background:#ffeaea; color:#b00; cursor:pointer; font-size:13px;">Delete</button>
+                    </form>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p style="color: #666;">No official repositories yet.</p>
+    {% endif %}
+</div>
+
+<div class="form-box dashboard-section">
+    <h2 style="margin-bottom: 1.5rem;">Users</h2>
+    <form method="get" action="{% url 'admin-dashboard' %}" style="display:flex; gap:10px; margin-bottom:1rem;">
+        <input type="text" name="user_search" placeholder="Search by username, email or name..." value="{{ user_search }}"
+            style="flex:1; padding:8px 12px; border:1px solid #d1d9e6; border-radius:6px; font-size:14px;">
+        <button type="submit" style="padding:8px 20px; background:#2d3a4b; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:14px;">Search</button>
+    </form>
     <table style="width:100%; border-collapse:collapse;">
         <thead>
             <tr>
@@ -24,8 +90,17 @@
         </tbody>
     </table>
     <div id="overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(220,230,250,0.6); backdrop-filter: blur(4px); z-index:999;"></div>
-    <div id="user-popup" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#fff; border-radius:12px; box-shadow:0 4px 24px rgba(0,0,0,0.08); padding:2rem; min-width:320px; z-index:1000;">
+    <div id="user-popup" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#fff; border-radius:12px; box-shadow:0 4px 24px rgba(0,0,0,0.08); padding:2rem; min-width:360px; z-index:1000;">
         <span id="popup-content"></span>
+        <div style="margin-top:1rem;">
+            <label style="font-weight:600; display:block; margin-bottom:4px;">Assign Badge:</label>
+            <select id="badge-select" style="padding:6px 10px; border:1px solid #d1d9e6; border-radius:6px; width:100%;">
+                <option value="none">None</option>
+                <option value="verified_publisher">Verified Publisher</option>
+                <option value="sponsored_oss">Sponsored OSS</option>
+            </select>
+            <button id="badge-btn" style="margin-top:8px; padding:6px 16px; border-radius:6px; border:none; background:#0969da; color:#fff; cursor:pointer;">Save Badge</button>
+        </div>
         <div style="margin-top:1.5rem; display:flex; gap:1rem; justify-content:flex-end;">
             <button id="block-btn" style="padding: 6px 16px; border-radius: 6px; border: 1px solid #b0b0b0; background: #ffeaea; color:#b00; cursor:pointer;">Block user</button>
             <button onclick="closePopup()" style="padding: 6px 16px; border-radius: 6px; border: 1px solid #b0b0b0; background: #f5f7fa; cursor:pointer;">Close</button>
@@ -42,7 +117,17 @@ function showUserDetails(userId) {
                  <b>First name:</b> ${data.first_name || '-'}<br>
                  <b>Last name:</b> ${data.last_name || '-'}<br>
                  <b>Email:</b> ${data.email}<br>
-                 <b>Status:</b> ${data.status}`;
+                 <b>Status:</b> ${data.status}<br>
+                 <b>Badge:</b> ${data.badge === 'none' ? 'None' : data.badge.replace('_', ' ')}`;
+            document.getElementById('badge-select').value = data.badge;
+            document.getElementById('badge-btn').onclick = function() {
+                var badge = document.getElementById('badge-select').value;
+                fetch('/admin-dashboard/user/' + userId + '/assign-badge/', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({badge: badge})
+                }).then(() => location.reload());
+            };
             if (data.status === 'Active') {
                 document.getElementById('block-btn').style.display = '';
                 document.getElementById('block-btn').onclick = function() {

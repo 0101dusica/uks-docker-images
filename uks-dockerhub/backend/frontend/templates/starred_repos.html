@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Starred Repositories{% endblock %}
+{% block extra_head %}
+<style>
+    body { align-items: flex-start; padding-top: 40px; }
+    .repo-container { width: 700px; max-width: 95vw; }
+    .repo-container h1 { color: #2d3a4b; text-align: center; margin-bottom: 1.5rem; }
+    .repo { background: #fff; border: 1px solid #d1d9e6; border-radius: 12px; padding: 16px 20px; margin-bottom: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+    .repo h3 { margin: 0 0 6px; color: #2d3a4b; }
+    .repo p { margin: 4px 0; }
+    .muted { color: #666; font-size: 14px; }
+    .official-badge { background: #1a7f37; color: #fff; font-size: 12px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; }
+    .user-badge { background: #0969da; color: #fff; font-size: 11px; padding: 2px 6px; border-radius: 4px; margin-left: 6px; }
+    .empty-msg { text-align: center; color: #666; margin-top: 2rem; }
+    .back-link { text-align: center; margin-top: 1.5rem; }
+    .back-link a { color: #5b7be6; font-weight: 500; text-decoration: none; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="repo-container">
+    <h1>My Starred Repositories</h1>
+
+    {% if repositories %}
+        {% for repo in repositories %}
+            <div class="repo">
+                <h3>
+                    {% if repo.is_official %}
+                        {{ repo.name }}
+                        <span class="official-badge">Docker Official Image</span>
+                    {% else %}
+                        {{ repo.owner.username }}/{{ repo.name }}
+                    {% endif %}
+                    {% if repo.owner.badge == 'verified_publisher' %}
+                        <span class="user-badge">Verified Publisher</span>
+                    {% elif repo.owner.badge == 'sponsored_oss' %}
+                        <span class="user-badge">Sponsored OSS</span>
+                    {% endif %}
+                </h3>
+                {% if repo.description %}
+                    <p>{{ repo.description }}</p>
+                {% else %}
+                    <p class="muted">No description.</p>
+                {% endif %}
+                <p class="muted">
+                    <span>{{ repo.stars }} stars</span>
+                    &nbsp;&nbsp; Created: {{ repo.created_at|date:"Y-m-d H:i" }}
+                </p>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p class="empty-msg">You haven't starred any repositories yet.</p>
+    {% endif %}
+
+    <div class="back-link">
+        <a href="{% url 'profile' %}">Back to Profile</a>
+        &nbsp;&nbsp;
+        <a href="{% url 'public-repositories' %}">Browse Public Repositories</a>
+    </div>
+</div>
+{% endblock %}
