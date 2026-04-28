@@ -4,6 +4,11 @@
 <div style="display:flex; flex-wrap:wrap; gap:2.5rem; justify-content:center;">
     <div class="form-box" style="min-width:600px; flex:1 1 350px; max-width:700px;">
         <h2 style="margin-bottom: 2rem;">Users</h2>
+        <form method="get" action="{% url 'superadmin-dashboard' %}" style="display:flex; gap:10px; margin-bottom:1rem;">
+            <input type="text" name="user_search" placeholder="Search by username, email or name..." value="{{ user_search }}"
+                style="flex:1; padding:8px 12px; border:1px solid #d1d9e6; border-radius:6px; font-size:14px;">
+            <button type="submit" style="padding:8px 20px; background:#2d3a4b; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:14px;">Search</button>
+        </form>
         <table style="width:100%; border-collapse:collapse;">
             <thead>
                 <tr>

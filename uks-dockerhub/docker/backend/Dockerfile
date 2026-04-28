@@ -13,6 +13,8 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 # Copy backend code from backend folder in project root
 COPY backend .
 
+RUN mkdir -p /app/logs
+
 ENV DJANGO_SETTINGS_MODULE=config.settings.docker
 
 CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000"]
