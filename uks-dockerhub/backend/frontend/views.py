@@ -1,11 +1,8 @@
-<<<<<<< HEAD
 from django.contrib.auth import login, logout
 from django.db.models import Q
 from repositories.models import Repository
-=======
-import logging
 
-from django.contrib.auth import login, logout
+import logging
 from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
@@ -14,8 +11,6 @@ from repositories.forms import RepositoryCreateForm, RepositoryEditForm, Officia
 from repositories.models import Repository, Star
 from repositories.registry import RegistryService
 from tags.models import Tag
->>>>>>> develop
-
 
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseForbidden
@@ -343,9 +338,7 @@ def superadmin_admin_block_view(request, admin_id):
 
 def public_repositories_view(request):
 
-    query = request.GET.get('q', '').strip()
-    repositories = Repository.objects.filter(visibility='public')
-
+    
     repositories = Repository.objects.filter(visibility='public')
 
     search = request.GET.get('search', '').strip()
@@ -580,7 +573,6 @@ def starred_repos_view(request):
     starred = Star.objects.filter(user=request.user).select_related('repository', 'repository__owner').order_by('-created_at')
     repositories = [s.repository for s in starred]
     return render(request, 'starred_repos.html', {'repositories': repositories})
->>>>>>> develop
 
     if query:
         repositories = repositories.filter(

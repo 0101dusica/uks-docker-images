@@ -46,23 +46,7 @@
 
 
     <h1>Public Repositories</h1>
-    <div class="search-container">
-    <form method="get" style="display:flex; gap:8px; margin-bottom:20px;">
-    <input 
-        type="search" 
-        name="q" 
-        placeholder="Search repositories..."
-       value="{{ query|default:'' }}" 
-         style="
-            flex:1;
-            padding:10px 12px;
-            border:1px solid #ddd;
-            border-radius:6px;
-            outline:none;
-        "
-    >
-</form>
-</div>
+   
 
     <div class="filter-bar">
         <form method="get" action="{% url 'public-repositories' %}">
