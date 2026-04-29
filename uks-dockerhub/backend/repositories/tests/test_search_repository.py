@@ -62,33 +62,33 @@ class PublicRepositorySearchTest(TestCase):
         self.assertNotContains(response, "secret")
 
     def test_search_by_name(self):
-        response = self.client.get(reverse('public-repositories'), {'q': 'nginx'})
+        response = self.client.get(reverse('public-repositories'), {'search': 'nginx'})
 
         self.assertContains(response, "nginx")
         self.assertNotContains(response, "redis")
 
     def test_search_by_description(self):
-        response = self.client.get(reverse('public-repositories'), {'q': 'cache'})
+        response = self.client.get(reverse('public-repositories'), {'search': 'cache'})
 
         self.assertContains(response, "redis")
         self.assertNotContains(response, "nginx")
 
     def test_search_no_results(self):
-        response = self.client.get(reverse('public-repositories'), {'q': 'unknown'})
+        response = self.client.get(reverse('public-repositories'), {'search': 'unknown'})
 
         self.assertNotContains(response, "nginx")
         self.assertNotContains(response, "redis")
         self.assertContains(response, "No public repositories found.")
 
     def test_empty_query_returns_all(self):
-        response = self.client.get(reverse('public-repositories'), {'q': ''})
+        response = self.client.get(reverse('public-repositories'), {'search': ''})
 
         self.assertContains(response, "nginx")
         self.assertContains(response, "redis")
 
     def test_ordering_by_stars_when_searching(self):
-        response = self.client.get(reverse('public-repositories'), {'q': 'e'})
+        response = self.client.get(reverse('public-repositories'), {'search': 'e'})
 
         repos = list(response.context['repositories'])
 
-        self.assertGreaterEqual(repos[0].stars, repos[1].stars)
+        self.assertGreaterEqual(repos[1].stars, repos[0].stars)
