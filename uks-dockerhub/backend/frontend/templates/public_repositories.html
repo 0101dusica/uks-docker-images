@@ -43,7 +43,7 @@
         border-radius: 6px; cursor: pointer; font-size: 14px;
     }
     .filter-bar button:hover { background: #1a2636; }
->>>>>>> develop
+
 </style>
 {% endblock %}
 {% block content %}
@@ -74,72 +74,60 @@
 
 
     {% if repositories %}
-<<<<<<< HEAD
-      {% for repo in repositories %}
-    <a href="{% url 'repository-detail' repo.id %}" class="repo-link">
-        <div class="repo">
-            <h3>
-                {{ repo.owner.username }}/{{ repo.name }}
-                {% if repo.is_official %}
-                    <span class="official-badge">Official</span>
-                {% endif %}
-            </h3>
+        {% for repo in repositories %}
+    <div class="repo">
+        <div class="repo-header">
+            
+            <a href="{% url 'repository-detail' repo.id %}" class="repo-link">
+                <h3>
+                    {% if repo.is_official %}
+                        {{ repo.name }}
+                        <span class="official-badge">Docker Official Image</span>
+                    {% else %}
+                        {{ repo.owner.username }}/{{ repo.name }}
+                    {% endif %}
+                    {% if repo.owner.badge == 'verified_publisher' %}
+                        <span class="user-badge">Verified Publisher</span>
+                    {% elif repo.owner.badge == 'sponsored_oss' %}
+                        <span class="user-badge">Sponsored OSS</span>
+                    {% endif %}
+                </h3>
+            </a>
+
+            {% if user.is_authenticated %}
+                <form method="post" action="{% url 'toggle-star' repo.id %}" style="margin:0;">
+                    {% csrf_token %}
+                    {% if repo.id in starred_ids %}
+                        <button type="submit" class="star-btn starred" title="Unstar">
+                            &#9733; {{ repo.stars }}
+                        </button>
+                    {% else %}
+                        <button type="submit" class="star-btn" title="Star">
+                            &#9734; {{ repo.stars }}
+                        </button>
+                    {% endif %}
+                </form>
+            {% endif %}
+        </div>
+
+        <a href="{% url 'repository-detail' repo.id %}" class="repo-link">
             {% if repo.description %}
                 <p>{{ repo.description }}</p>
             {% else %}
                 <p class="muted">No description.</p>
             {% endif %}
+
             <p class="muted">
-                <span class="stars">{{ repo.stars }} stars</span>
-                &nbsp;&nbsp; Created: {{ repo.created_at|date:"Y-m-d H:i" }}
-            </p>
-        </div>
-    </a>
-{% endfor %}
-=======
-        {% for repo in repositories %}
-            <div class="repo">
-                <div class="repo-header">
-                    <h3>
-                        {% if repo.is_official %}
-                            {{ repo.name }}
-                            <span class="official-badge">Docker Official Image</span>
-                        {% else %}
-                            {{ repo.owner.username }}/{{ repo.name }}
-                        {% endif %}
-                        {% if repo.owner.badge == 'verified_publisher' %}
-                            <span class="user-badge">Verified Publisher</span>
-                        {% elif repo.owner.badge == 'sponsored_oss' %}
-                            <span class="user-badge">Sponsored OSS</span>
-                        {% endif %}
-                    </h3>
-                    {% if user.is_authenticated %}
-                        <form method="post" action="{% url 'toggle-star' repo.id %}" style="margin:0;">
-                            {% csrf_token %}
-                            {% if repo.id in starred_ids %}
-                                <button type="submit" class="star-btn starred" title="Unstar">&#9733; {{ repo.stars }}</button>
-                            {% else %}
-                                <button type="submit" class="star-btn" title="Star">&#9734; {{ repo.stars }}</button>
-                            {% endif %}
-                        </form>
-                    {% endif %}
-                </div>
-                {% if repo.description %}
-                    <p>{{ repo.description }}</p>
-                {% else %}
-                    <p class="muted">No description.</p>
+                {% if not user.is_authenticated %}
+                    <span class="stars">{{ repo.stars }} stars</span> &nbsp;&nbsp;
                 {% endif %}
-                <p class="muted">
-                    {% if not user.is_authenticated %}
-                        <span class="stars">{{ repo.stars }} stars</span> &nbsp;&nbsp;
-                    {% endif %}
-                    Created: {{ repo.created_at|date:"Y-m-d H:i" }}
-                </p>
-            </div>
-        {% endfor %}
+                Created: {{ repo.created_at|date:"Y-m-d H:i" }}
+            </p>
+        </a>
+    </div>
+{% endfor %}
     {% else %}
         <p class="empty-msg">No public repositories found.</p>
     {% endif %}
->>>>>>> develop
 </div>
 {% endblock %}

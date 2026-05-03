@@ -20,7 +20,7 @@ from tags.models import Tag
 
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse, HttpResponseForbidden
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 
 
 def _invalidate_repo_cache():
@@ -347,7 +347,7 @@ def superadmin_admin_block_view(request, admin_id):
 def repository_detail_view(request, id):
     repo = get_object_or_404(Repository, id=id, visibility="public")
 
-    return render(request, "repository-detail.html", {
+    return render(request, "repository_detail.html", {
         "repo": repo
     }
     )
@@ -604,7 +604,7 @@ def starred_repos_view(request):
     return render(request, 'public_repositories.html', {
         'repositories': repositories,
         'query': query
->>>>>>> develop
+
     })
 
 @login_required(login_url='login')

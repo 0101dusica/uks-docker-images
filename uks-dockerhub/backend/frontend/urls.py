@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import registration_view, registration_success_view, login_view, login_success_view, admin_dashboard_view, \
-    superadmin_dashboard_view, user_details_view, block_user_view, assign_badge_view, \
+    superadmin_dashboard_view, user_details_view, repository_detail_view, block_user_view, assign_badge_view, \
     edit_official_repository_view, delete_official_repository_view, delete_registry_tag_view, \
     superadmin_user_details_view, \
     superadmin_user_block_view, superadmin_admin_details_view, superadmin_admin_block_view, logout_view, \

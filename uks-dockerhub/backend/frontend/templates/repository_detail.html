@@ -2,25 +2,123 @@
 
 {% block title %}{{ repo.name }}{% endblock %}
 
+{% block extra_head %}
+<style>
+    body {
+        background: #f6f8fa;
+    }
+
+    .repo-detail-container {
+        max-width: 900px;
+        margin: 60px auto;
+        padding: 0 20px;
+    }
+
+    .repo-card {
+        background: #fff;
+        border: 1px solid #d1d9e6;
+        border-radius: 12px;
+        padding: 24px 28px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+
+    .repo-title {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 10px;
+        color: #2d3a4b;
+    }
+
+    .repo-sub {
+        color: #555;
+        font-size: 16px;
+        margin-bottom: 20px;
+    }
+
+    .repo-meta {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        margin-top: 20px;
+        font-size: 14px;
+        color: #444;
+    }
+
+    .meta-box {
+        background: #f6f8fa;
+        padding: 10px 14px;
+        border-radius: 8px;
+        border: 1px solid #e1e4e8;
+    }
+
+    .badge {
+        display: inline-block;
+        background: #1a7f37;
+        color: #fff;
+        font-size: 12px;
+        padding: 3px 8px;
+        border-radius: 6px;
+        margin-left: 8px;
+    }
+
+    .stars {
+        font-weight: 600;
+        color: #f5c518;
+    }
+
+    .back-link {
+        display: inline-block;
+        margin-bottom: 20px;
+        text-decoration: none;
+        color: #0969da;
+        font-size: 14px;
+    }
+
+    .back-link:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="repo-container">
-    <h1>{{ repo.owner.username }}/{{ repo.name }}</h1>
+<div class="repo-detail-container">
 
-    {% if repo.is_official %}
-        <span class="official-badge">Official</span>
-    {% endif %}
+    <a href="{% url 'public-repositories' %}" class="back-link">
+        ← Back to repositories
+    </a>
 
-    <p>
-        {% if repo.description %}
-            {{ repo.description }}
-        {% else %}
-            <span class="muted">No description.</span>
-        {% endif %}
-    </p>
+    <div class="repo-card">
+        <div class="repo-title">
+            {% if repo.is_official %}
+                {{ repo.name }}
+                <span class="badge">Official</span>
+            {% else %}
+                {{ repo.owner.username }}/{{ repo.name }}
+            {% endif %}
+        </div>
 
-    <p class="muted">
-        ⭐ {{ repo.stars }} stars <br>
-        Created: {{ repo.created_at|date:"Y-m-d H:i" }}
-    </p>
+        <div class="repo-sub">
+            {% if repo.description %}
+                {{ repo.description }}
+            {% else %}
+                No description provided.
+            {% endif %}
+        </div>
+
+        <div class="repo-meta">
+            <div class="meta-box">
+                ⭐ <span class="stars">{{ repo.stars }}</span> stars
+            </div>
+
+            <div class="meta-box">
+                📅 Created: {{ repo.created_at|date:"Y-m-d H:i" }}
+            </div>
+
+            <div class="meta-box">
+                👤 Owner: {{ repo.owner.username }}
+            </div>
+        </div>
+    </div>
+
 </div>
 {% endblock %}
