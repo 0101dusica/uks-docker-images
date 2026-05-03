@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(UKS_TEST_DB=ON DJANGO_SETTINGS_MODULE=config.settings.ci python manage.py test analytics.tests.test_forward_logs_to_es --noinput)"
+    ]
+  }
+}

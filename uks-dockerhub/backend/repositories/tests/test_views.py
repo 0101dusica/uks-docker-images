@@ -1,0 +1,444 @@
+from django.test import TestCase, Client
+from django.urls import reverse
+from users.models import User
+from repositories.models import Repository, Star
+
+
+class RepositoryCRUDTests(TestCase):
+
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(
+            username='owner', email='owner@example.com', password='pass1234'
+        )
+        self.client.login(username='owner', password='pass1234')
+
+    def test_my_repositories_page_loads(self):
+        response = self.client.get(reverse('my-repositories'))
+        self.assertEqual(response.status_code, 200)
+
+    def test_create_repository_page_loads(self):
+        response = self.client.get(reverse('create-repository'))
+        self.assertEqual(response.status_code, 200)
+
+    def test_create_repository(self):
+        response = self.client.post(reverse('create-repository'), {
+            'name': 'newrepo',
+            'description': 'A test repo',
+            'visibility': 'public',
+        })
+        self.assertRedirects(response, reverse('my-repositories'))
+        self.assertTrue(Repository.objects.filter(name='newrepo', owner=self.user).exists())
+
+    def test_create_duplicate_repository(self):
+        Repository.objects.create(name='existing', owner=self.user)
+        response = self.client.post(reverse('create-repository'), {
+            'name': 'existing',
+            'description': 'duplicate',
+            'visibility': 'public',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Repository.objects.filter(name='existing').count(), 1)
+
+    def test_edit_repository(self):
+        repo = Repository.objects.create(
+            name='myrepo', owner=self.user, description='old', visibility='public'
+        )
+        response = self.client.post(reverse('edit-repository', args=[repo.id]), {
+            'description': 'updated description',
+            'visibility': 'private',
+        })
+        self.assertRedirects(response, reverse('my-repositories'))
+        repo.refresh_from_db()
+        self.assertEqual(repo.description, 'updated description')
+        self.assertEqual(repo.visibility, 'private')
+
+    def test_cannot_edit_other_users_repository(self):
+        other = User.objects.create_user(
+            username='other', email='other@example.com', password='pass1234'
+        )
+        repo = Repository.objects.create(name='notmine', owner=other)
+        response = self.client.get(reverse('edit-repository', args=[repo.id]))
+        self.assertEqual(response.status_code, 403)
+
+    def test_delete_repository(self):
+        repo = Repository.objects.create(name='todelete', owner=self.user)
+        response = self.client.post(reverse('delete-repository', args=[repo.id]))
+        self.assertRedirects(response, reverse('my-repositories'))
+        self.assertFalse(Repository.objects.filter(id=repo.id).exists())
+
+    def test_cannot_delete_other_users_repository(self):
+        other = User.objects.create_user(
+            username='other', email='other@example.com', password='pass1234'
+        )
+        repo = Repository.objects.create(name='notmine', owner=other)
+        response = self.client.post(reverse('delete-repository', args=[repo.id]))
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(Repository.objects.filter(id=repo.id).exists())
+
+    def test_unauthenticated_cannot_create_repository(self):
+        self.client.logout()
+        response = self.client.get(reverse('create-repository'))
+        self.assertEqual(response.status_code, 302)
+
+
+class PublicRepositoriesTests(TestCase):
+
+    def setUp(self):
+        self.client = Client()
+        self.user = User.objects.create_user(
+            username='owner', email='owner@example.com', password='pass1234'
+        )
+
+    def test_public_repos_page_loads(self):
+        response = self.client.get(reverse('public-repositories'))
+        self.assertEqual(response.status_code, 200)
+
+    def test_only_public_repos_shown(self):
+        Repository.objects.create(
+            name='public1', owner=self.user, visibility='public'
+        )
+        Repository.objects.create(
+            name='private1', owner=self.user, visibility='private'
+        )
+        response = self.client.get(reverse('public-repositories'))
+        self.assertContains(response, 'public1')
+        self.assertNotContains(response, 'private1')
+
+    def test_public_repos_api(self):
+        Repository.objects.create(
+            name='apirepo', owner=self.user, visibility='public'
+        )
+        response = self.client.get('/api/repositories/public/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()['count'], 1)
+        self.assertEqual(response.json()['results'][0]['name'], 'apirepo')
+
+    def test_search_by_name(self):
+        Repository.objects.create(name='django-app', owner=self.user, visibility='public')
+        Repository.objects.create(name='flask-app', owner=self.user, visibility='public')
+        response = self.client.get(reverse('public-repositories') + '?search=django')
+        self.assertContains(response, 'django-app')
+        self.assertNotContains(response, 'flask-app')
+
+    def test_search_by_description(self):
+        Repository.objects.create(
+            name='repo1', owner=self.user, visibility='public',
+            description='A machine learning project'
+        )
+        Repository.objects.create(
+            name='repo2', owner=self.user, visibility='public',
+            description='A web framework'
+        )
+        response = self.client.get(reverse('public-repositories') + '?search=machine')
+        self.assertContains(response, 'repo1')
+        self.assertNotContains(response, 'repo2')
+
+    def test_sort_by_stars(self):
+        Repository.objects.create(name='unpopular', owner=self.user, visibility='public', stars=1)
+        Repository.objects.create(name='popular', owner=self.user, visibility='public', stars=100)
+        response = self.client.get(reverse('public-repositories') + '?sort=stars')
+        content = response.content.decode()
+        self.assertTrue(content.index('popular') < content.index('unpopular'))
+
+    def test_sort_by_name(self):
+        Repository.objects.create(name='zebra', owner=self.user, visibility='public')
+        Repository.objects.create(name='alpha', owner=self.user, visibility='public')
+        response = self.client.get(reverse('public-repositories') + '?sort=name')
+        content = response.content.decode()
+        self.assertTrue(content.index('alpha') < content.index('zebra'))
+
+    def test_filter_by_official(self):
+        Repository.objects.create(name='official-repo', owner=self.user, visibility='public', is_official=True)
+        Repository.objects.create(name='normal-repo', owner=self.user, visibility='public', is_official=False)
+        response = self.client.get(reverse('public-repositories') + '?badge=official')
+        self.assertContains(response, 'official-repo')
+        self.assertNotContains(response, 'normal-repo')
+
+    def test_filter_by_verified_publisher(self):
+        verified_user = User.objects.create_user(
+            username='verified', email='verified@example.com',
+            password='pass1234', badge='verified_publisher'
+        )
+        Repository.objects.create(name='verified-repo', owner=verified_user, visibility='public')
+        Repository.objects.create(name='normal-repo', owner=self.user, visibility='public')
+        response = self.client.get(reverse('public-repositories') + '?badge=verified_publisher')
+        self.assertContains(response, 'verified-repo')
+        self.assertNotContains(response, 'normal-repo')
+
+    def test_api_search(self):
+        Repository.objects.create(name='django-app', owner=self.user, visibility='public')
+        Repository.objects.create(name='flask-app', owner=self.user, visibility='public')
+        response = self.client.get('/api/repositories/public/?search=django')
+        self.assertEqual(response.json()['count'], 1)
+        self.assertEqual(response.json()['results'][0]['name'], 'django-app')
+
+    def test_api_filter_by_badge(self):
+        Repository.objects.create(name='official', owner=self.user, visibility='public', is_official=True)
+        Repository.objects.create(name='normal', owner=self.user, visibility='public')
+        response = self.client.get('/api/repositories/public/?badge=official')
+        self.assertEqual(response.json()['count'], 1)
+        self.assertEqual(response.json()['results'][0]['name'], 'official')
+
+
+class StarTests(TestCase):
+
+    def setUp(self):
+        self.client = Client()
+        self.owner = User.objects.create_user(
+            username='owner', email='owner@example.com', password='pass1234'
+        )
+        self.user = User.objects.create_user(
+            username='staruser', email='star@example.com', password='pass1234'
+        )
+        self.repo = Repository.objects.create(
+            name='starrable', owner=self.owner, visibility='public'
+        )
+        self.client.login(username='staruser', password='pass1234')
+
+    def test_star_repository(self):
+        response = self.client.post(reverse('toggle-star', args=[self.repo.id]))
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(Star.objects.filter(user=self.user, repository=self.repo).exists())
+        self.repo.refresh_from_db()
+        self.assertEqual(self.repo.stars, 1)
+
+    def test_unstar_repository(self):
+        Star.objects.create(user=self.user, repository=self.repo)
+        self.repo.stars = 1
+        self.repo.save()
+        response = self.client.post(reverse('toggle-star', args=[self.repo.id]))
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(Star.objects.filter(user=self.user, repository=self.repo).exists())
+        self.repo.refresh_from_db()
+        self.assertEqual(self.repo.stars, 0)
+
+    def test_unauthenticated_cannot_star(self):
+        self.client.logout()
+        response = self.client.post(reverse('toggle-star', args=[self.repo.id]))
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(Star.objects.filter(repository=self.repo).exists())
+
+
+class OfficialRepositoryTests(TestCase):
+
+    def setUp(self):
+        self.client = Client()
+        self.admin = User.objects.create_user(
+            username='admin1', email='admin@example.com',
+            password='pass1234', role='admin'
+        )
+        self.user = User.objects.create_user(
+            username='regular', email='user@example.com',
+            password='pass1234', role='user'
+        )
+
+    def test_admin_can_create_official_repo(self):
+        self.client.login(username='admin1', password='pass1234')
+        response = self.client.post(reverse('admin-dashboard'), {
+            'create_official': '1',
+            'name': 'nginx',
+            'description': 'Official Nginx image',
+        })
+        self.assertEqual(response.status_code, 302)
+        repo = Repository.objects.get(name='nginx')
+        self.assertTrue(repo.is_official)
+        self.assertEqual(repo.visibility, 'public')
+        self.assertEqual(repo.owner, self.admin)
+
+    def test_official_repo_display_name_has_no_prefix(self):
+        self.client.login(username='admin1', password='pass1234')
+        repo = Repository.objects.create(
+            name='python', owner=self.admin, is_official=True, visibility='public'
+        )
+        self.assertEqual(str(repo), 'python')
+        self.assertEqual(repo.display_name, 'python')
+
+    def test_regular_repo_display_name_has_prefix(self):
+        repo = Repository.objects.create(
+            name='myapp', owner=self.user, visibility='public'
+        )
+        self.assertEqual(str(repo), 'regular/myapp')
+        self.assertEqual(repo.display_name, 'regular/myapp')
+
+    def test_cannot_create_duplicate_official_repo(self):
+        self.client.login(username='admin1', password='pass1234')
+        Repository.objects.create(
+            name='nginx', owner=self.admin, is_official=True, visibility='public'
+        )
+        response = self.client.post(reverse('admin-dashboard'), {
+            'create_official': '1',
+            'name': 'nginx',
+            'description': 'Duplicate',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Repository.objects.filter(name='nginx', is_official=True).count(), 1)
+
+    def test_regular_user_cannot_create_official_repo(self):
+        self.client.login(username='regular', password='pass1234')
+        response = self.client.post(reverse('admin-dashboard'), {
+            'create_official': '1',
+            'name': 'nginx',
+            'description': 'Trying to create official',
+        })
+        self.assertEqual(response.status_code, 403)
+
+    def test_official_repos_shown_in_admin_dashboard(self):
+        self.client.login(username='admin1', password='pass1234')
+        Repository.objects.create(
+            name='redis', owner=self.admin, is_official=True, visibility='public'
+        )
+        response = self.client.get(reverse('admin-dashboard'))
+        self.assertContains(response, 'redis')
+        self.assertContains(response, 'Docker Official Image')
+
+
+class BadgeAssignmentTests(TestCase):
+
+    def setUp(self):
+        self.client = Client()
+        self.admin = User.objects.create_user(
+            username='admin1', email='admin@example.com',
+            password='pass1234', role='admin'
+        )
+        self.user = User.objects.create_user(
+            username='regular', email='user@example.com',
+            password='pass1234', role='user'
+        )
+
+    def test_admin_can_assign_verified_publisher(self):
+        self.client.login(username='admin1', password='pass1234')
+        response = self.client.post(
+            reverse('assign-badge', args=[self.user.id]),
+            data='{"badge": "verified_publisher"}',
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.badge, 'verified_publisher')
+
+    def test_admin_can_assign_sponsored_oss(self):
+        self.client.login(username='admin1', password='pass1234')
+        response = self.client.post(
+            reverse('assign-badge', args=[self.user.id]),
+            data='{"badge": "sponsored_oss"}',
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.badge, 'sponsored_oss')
+
+    def test_admin_can_remove_badge(self):
+        self.user.badge = 'verified_publisher'
+        self.user.save()
+        self.client.login(username='admin1', password='pass1234')
+        response = self.client.post(
+            reverse('assign-badge', args=[self.user.id]),
+            data='{"badge": "none"}',
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.badge, 'none')
+
+    def test_invalid_badge_rejected(self):
+        self.client.login(username='admin1', password='pass1234')
+        response = self.client.post(
+            reverse('assign-badge', args=[self.user.id]),
+            data='{"badge": "fake_badge"}',
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_regular_user_cannot_assign_badge(self):
+        self.client.login(username='regular', password='pass1234')
+        response = self.client.post(
+            reverse('assign-badge', args=[self.user.id]),
+            data='{"badge": "verified_publisher"}',
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_user_details_includes_badge(self):
+        self.user.badge = 'sponsored_oss'
+        self.user.save()
+        self.client.login(username='admin1', password='pass1234')
+        response = self.client.get(
+            reverse('user-details', args=[self.user.id])
+        )
+        data = response.json()
+        self.assertEqual(data['badge'], 'sponsored_oss')
+
+
+class ManageOfficialRepositoryTests(TestCase):
+
+    def setUp(self):
+        self.client = Client()
+        self.admin = User.objects.create_user(
+            username='admin1', email='admin@example.com',
+            password='pass1234', role='admin'
+        )
+        self.user = User.objects.create_user(
+            username='regular', email='user@example.com',
+            password='pass1234', role='user'
+        )
+        self.official_repo = Repository.objects.create(
+            name='nginx', owner=self.admin, is_official=True,
+            visibility='public', description='Official Nginx'
+        )
+
+    def test_admin_can_edit_official_repo(self):
+        self.client.login(username='admin1', password='pass1234')
+        response = self.client.post(
+            reverse('edit-official-repo', args=[self.official_repo.id]),
+            {'description': 'Updated description', 'visibility': 'public'},
+        )
+        self.assertRedirects(response, reverse('admin-dashboard'))
+        self.official_repo.refresh_from_db()
+        self.assertEqual(self.official_repo.description, 'Updated description')
+
+    def test_admin_can_load_edit_page(self):
+        self.client.login(username='admin1', password='pass1234')
+        response = self.client.get(
+            reverse('edit-official-repo', args=[self.official_repo.id])
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'nginx')
+
+    def test_admin_can_delete_official_repo(self):
+        self.client.login(username='admin1', password='pass1234')
+        response = self.client.post(
+            reverse('delete-official-repo', args=[self.official_repo.id])
+        )
+        self.assertRedirects(response, reverse('admin-dashboard'))
+        self.assertFalse(Repository.objects.filter(id=self.official_repo.id).exists())
+
+    def test_regular_user_cannot_edit_official_repo(self):
+        self.client.login(username='regular', password='pass1234')
+        response = self.client.get(
+            reverse('edit-official-repo', args=[self.official_repo.id])
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_regular_user_cannot_delete_official_repo(self):
+        self.client.login(username='regular', password='pass1234')
+        response = self.client.post(
+            reverse('delete-official-repo', args=[self.official_repo.id])
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(Repository.objects.filter(id=self.official_repo.id).exists())
+
+    def test_cannot_edit_nonexistent_official_repo(self):
+        self.client.login(username='admin1', password='pass1234')
+        response = self.client.get(reverse('edit-official-repo', args=[9999]))
+        self.assertEqual(response.status_code, 403)
+
+    def test_cannot_edit_regular_repo_as_official(self):
+        regular_repo = Repository.objects.create(
+            name='myapp', owner=self.user, visibility='public'
+        )
+        self.client.login(username='admin1', password='pass1234')
+        response = self.client.get(
+            reverse('edit-official-repo', args=[regular_repo.id])
+        )
+        self.assertEqual(response.status_code, 403)
