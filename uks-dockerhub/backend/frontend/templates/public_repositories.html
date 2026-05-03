@@ -12,6 +12,9 @@
     .stars { font-weight: 600; }
     .official-badge { background: #1a7f37; color: #fff; font-size: 12px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; }
     .empty-msg { text-align: center; color: #666; margin-top: 2rem; }
+    .repo-link {
+    text-decoration: none;color: inherit; display: block;
+}
 </style>
 {% endblock %}
 {% block content %}
@@ -19,27 +22,26 @@
     <h1>Public Repositories</h1>
 
     {% if repositories %}
-        {% for repo in repositories %}
-            <div class="repo">
-                <h3>
-                    {{ repo.owner.username }}/{{ repo.name }}
-                    {% if repo.is_official %}
-                        <span class="official-badge">Official</span>
-                    {% endif %}
-                </h3>
-                {% if repo.description %}
-                    <p>{{ repo.description }}</p>
-                {% else %}
-                    <p class="muted">No description.</p>
+      {% for repo in repositories %}
+    <a href="{% url 'repository-detail' repo.id %}" class="repo-link">
+        <div class="repo">
+            <h3>
+                {{ repo.owner.username }}/{{ repo.name }}
+                {% if repo.is_official %}
+                    <span class="official-badge">Official</span>
                 {% endif %}
-                <p class="muted">
-                    <span class="stars">{{ repo.stars }} stars</span>
-                    &nbsp;&nbsp; Created: {{ repo.created_at|date:"Y-m-d H:i" }}
-                </p>
-            </div>
-        {% endfor %}
-    {% else %}
-        <p class="empty-msg">No public repositories found.</p>
-    {% endif %}
+            </h3>
+            {% if repo.description %}
+                <p>{{ repo.description }}</p>
+            {% else %}
+                <p class="muted">No description.</p>
+            {% endif %}
+            <p class="muted">
+                <span class="stars">{{ repo.stars }} stars</span>
+                &nbsp;&nbsp; Created: {{ repo.created_at|date:"Y-m-d H:i" }}
+            </p>
+        </div>
+    </a>
+{% endfor %}
 </div>
 {% endblock %}

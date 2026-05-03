@@ -182,6 +182,12 @@ def public_repositories_view(request):
     repositories = Repository.objects.filter(visibility='public').order_by('-created_at')
     return render(request, 'public_repositories.html', {'repositories': repositories})
 
+def repository_detail_view(request, id):
+    repo = get_object_or_404(Repository, id=id, visibility="public")
+
+    return render(request, "repository-detail.html", {
+        "repo": repo
+    })
 
 @login_required(login_url='login')
 def force_password_change_view(request):
