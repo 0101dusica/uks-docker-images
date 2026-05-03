@@ -6,6 +6,7 @@ from users.models import User
 class UserRegistrationTests(APITestCase):
     def setUp(self):
         self.url = reverse('user-register')
+        self.initial_user_count = User.objects.count()
         self.user_data = {
             'email': 'test@example.com',
             'username': 'testuser',
@@ -17,8 +18,8 @@ class UserRegistrationTests(APITestCase):
     def test_successful_registration(self):
         response = self.client.post(self.url, self.user_data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(User.objects.count(), 1)
-        self.assertEqual(User.objects.get().email, self.user_data['email'])
+        self.assertEqual(User.objects.count(), self.initial_user_count + 1)
+        self.assertTrue(User.objects.filter(email=self.user_data['email']).exists())
 
     def test_duplicate_email_registration(self):
         User.objects.create_user(
