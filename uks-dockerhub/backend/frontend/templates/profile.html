@@ -64,9 +64,11 @@
         <button type="submit" class="btn-save">Save Changes</button>
     </form>
 
+    {% if user.role == 'user' %}
     <div class="profile-links">
         <a href="{% url 'starred-repos' %}">My Starred Repositories</a>
         <a href="{% url 'my-repositories' %}">My Repositories</a>
     </div>
+    {% endif %}
 </div>
 {% endblock %}

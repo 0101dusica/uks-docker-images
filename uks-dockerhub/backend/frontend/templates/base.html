@@ -109,6 +109,11 @@
         {% block logout_button %}
         {% if request.user.is_authenticated %}
         <div class="logout-link">
+            {% if request.user.role == 'admin' %}
+            <a href="{% url 'admin-dashboard' %}">Dashboard</a>
+            {% elif request.user.role == 'superadmin' %}
+            <a href="{% url 'superadmin-dashboard' %}">Dashboard</a>
+            {% endif %}
             <a href="{% url 'profile' %}">Profile</a>
             {% if request.user.role == 'admin' or request.user.role == 'superadmin' %}
             <a href="{% url 'analytics-search' %}">Analytics</a>
