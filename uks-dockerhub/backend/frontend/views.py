@@ -231,6 +231,23 @@ def block_user_view(request, user_id):
             return JsonResponse({'error': 'User not found'}, status=404)
     return HttpResponseForbidden()
 
+@csrf_exempt
+@admin_required
+def unblock_user_view(request, user_id):
+    if request.method == 'POST':
+        try:
+            user = User.objects.get(id=user_id)
+            user.is_active = True
+            user.save()
+            logger.info(
+                "User unblocked",
+                extra={"target_user_id": str(user.id), "target_username": user.username, "admin_id": str(request.user.id)},
+            )
+            return JsonResponse({'success': True})
+        except User.DoesNotExist:
+            return JsonResponse({'error': 'User not found'}, status=404)
+    return HttpResponseForbidden()
+
 @superadmin_required
 def superadmin_dashboard_view(request):
     users = User.objects.filter(role='user')
@@ -310,6 +327,23 @@ def superadmin_user_block_view(request, user_id):
             return JsonResponse({'error': 'User not found'}, status=404)
     return HttpResponseForbidden()
 
+@csrf_exempt
+@superadmin_required
+def superadmin_user_unblock_view(request, user_id):
+    if request.method == 'POST':
+        try:
+            user = User.objects.get(id=user_id, role='user')
+            user.is_active = True
+            user.save()
+            logger.info(
+                "User unblocked by superadmin",
+                extra={"target_user_id": str(user.id), "target_username": user.username, "superadmin_id": str(request.user.id)},
+            )
+            return JsonResponse({'success': True})
+        except User.DoesNotExist:
+            return JsonResponse({'error': 'User not found'}, status=404)
+    return HttpResponseForbidden()
+
 @superadmin_required
 def superadmin_admin_details_view(request, admin_id):
     try:
@@ -335,6 +369,23 @@ def superadmin_admin_block_view(request, admin_id):
             admin.save()
             logger.info(
                 "Admin blocked by superadmin",
+                extra={"target_admin_id": str(admin.id), "target_username": admin.username, "superadmin_id": str(request.user.id)},
+            )
+            return JsonResponse({'success': True})
+        except User.DoesNotExist:
+            return JsonResponse({'error': 'Admin not found'}, status=404)
+    return HttpResponseForbidden()
+
+@csrf_exempt
+@superadmin_required
+def superadmin_admin_unblock_view(request, admin_id):
+    if request.method == 'POST':
+        try:
+            admin = User.objects.get(id=admin_id, role='admin')
+            admin.is_active = True
+            admin.save()
+            logger.info(
+                "Admin unblocked by superadmin",
                 extra={"target_admin_id": str(admin.id), "target_username": admin.username, "superadmin_id": str(request.user.id)},
             )
             return JsonResponse({'success': True})

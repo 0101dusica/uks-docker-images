@@ -103,6 +103,7 @@
         </div>
         <div style="margin-top:1.5rem; display:flex; gap:1rem; justify-content:flex-end;">
             <button id="block-btn" style="padding: 6px 16px; border-radius: 6px; border: 1px solid #b0b0b0; background: #ffeaea; color:#b00; cursor:pointer;">Block user</button>
+            <button id="unblock-btn" style="padding: 6px 16px; border-radius: 6px; border: 1px solid #b0b0b0; background: #eaffea; color:#1a7f37; cursor:pointer;">Unblock user</button>
             <button onclick="closePopup()" style="padding: 6px 16px; border-radius: 6px; border: 1px solid #b0b0b0; background: #f5f7fa; cursor:pointer;">Close</button>
         </div>
     </div>
@@ -130,12 +131,18 @@ function showUserDetails(userId) {
             };
             if (data.status === 'Active') {
                 document.getElementById('block-btn').style.display = '';
+                document.getElementById('unblock-btn').style.display = 'none';
                 document.getElementById('block-btn').onclick = function() {
                     fetch('/admin-dashboard/user/' + userId + '/block/', {method:'POST'})
                         .then(() => location.reload());
                 };
             } else {
                 document.getElementById('block-btn').style.display = 'none';
+                document.getElementById('unblock-btn').style.display = '';
+                document.getElementById('unblock-btn').onclick = function() {
+                    fetch('/admin-dashboard/user/' + userId + '/unblock/', {method:'POST'})
+                        .then(() => location.reload());
+                };
             }
             document.getElementById('overlay').style.display = 'block';
             document.getElementById('user-popup').style.display = 'block';
