@@ -55,7 +55,7 @@ python -c "import secrets; print(secrets.token_urlsafe(50))"
 docker compose up --build
 ```
 
-The application will be available at **http://localhost**
+The application will be available at **http://localhost** (port 80, served by Nginx)
 
 ### 3. First login (Superadmin)
 
