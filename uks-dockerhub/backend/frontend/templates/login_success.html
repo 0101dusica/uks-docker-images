@@ -1,15 +1,16 @@
 {% extends "base.html" %}
-{% block title %}Login Successful{% endblock %}
+{% block title %}Welcome — UKSHub{% endblock %}
 {% block content %}
-<div class="form-box">
-    <h2>Login Successful</h2>
-    <div style="text-align:center; margin-top:1.5rem; font-size:1.1rem;">
-        You are now logged in.
+<div class="page-centered">
+<div class="form-box" style="text-align:center;">
+    <h2>You're signed in!</h2>
+    <p style="color:#555; font-size:0.95rem; margin:1.5rem 0;">
+        Welcome back. Where would you like to go?
+    </p>
+    <div style="display:flex; flex-direction:column; gap:0.75rem;">
+        <a href="{% url 'public-repositories' %}" class="submit-btn" style="display:block; text-decoration:none;">Explore Repositories</a>
+        <a href="{% url 'my-repositories' %}" style="font-weight:600; font-size:0.95rem;">My Repositories</a>
     </div>
-    <div style="text-align:center; margin-top:1.5rem;">
-        <a href="{% url 'my-repositories' %}" style="color:#5b7be6; font-weight:500; text-decoration:none;">My Repositories</a>
-        &nbsp;&nbsp;|&nbsp;&nbsp;
-        <a href="{% url 'public-repositories' %}" style="color:#5b7be6; font-weight:500; text-decoration:none;">Explore Public Repositories</a>
-    </div>
+</div>
 </div>
 {% endblock %}

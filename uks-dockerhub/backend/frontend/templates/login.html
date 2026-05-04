@@ -1,8 +1,9 @@
 {% extends "base.html" %}
-{% block title %}Login{% endblock %}
+{% block title %}Sign In — UKSHub{% endblock %}
 {% block content %}
+<div class="page-centered">
 <div class="form-box">
-    <h2>Login</h2>
+    <h2>Sign In</h2>
     <form method="post">
         {% csrf_token %}
         {% if form.non_field_errors %}
@@ -18,11 +19,12 @@
             {{ form.password }}
             {% for error in form.password.errors %}<div class="errorlist">{{ error }}</div>{% endfor %}
         </div>
-        <button type="submit" class="submit-btn">Login</button>
-        <div style="text-align:center; margin-top:1rem;">
-            <span>Don't have an account?</span>
-            <a href="/register/" style="color:#5b7be6; font-weight:500; text-decoration:none; margin-left:0.5rem;">Register</a>
+        <button type="submit" class="submit-btn">Sign In</button>
+        <div style="text-align:center; margin-top:1.2rem; font-size:0.9rem; color:#666;">
+            Don't have an account?
+            <a href="{% url 'register' %}" style="font-weight:600; margin-left:4px;">Sign Up</a>
         </div>
     </form>
+</div>
 </div>
 {% endblock %}

@@ -57,6 +57,9 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
+TIME_ZONE = 'Europe/Belgrade'
+USE_TZ = True
+
 
 # Use custom user model
 AUTH_USER_MODEL = 'users.User'

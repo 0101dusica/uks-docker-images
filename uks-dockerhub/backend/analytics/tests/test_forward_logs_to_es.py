@@ -134,25 +134,25 @@ class ForwardLogsCommandTests(SimpleTestCase):
     # ------------------------------------------------------------------ incremental reads
 
     def test_does_not_reindex_already_forwarded_lines(self):
-        # Arrange — first run forwards LINE_INFO
+        # Arrange - first run forwards LINE_INFO
         self._write_log(LINE_INFO)
         self._run()
         cursor_after_first = self._cursor()
 
-        # Arrange — append a new line
+        # Arrange - append a new line
         with open(self.log_file, 'a', encoding='utf-8') as fh:
             fh.write(LINE_WARN + '\n')
 
-        # Act — second run
+        # Act - second run
         _, mock_bulk = self._run()
 
-        # Assert — only LINE_WARN is indexed on the second run
+        # Assert - only LINE_WARN is indexed on the second run
         docs = mock_bulk.call_args[0][1]
         self.assertEqual(len(docs), 1)
         self.assertEqual(docs[0]['_source']['message'], 'Failed login attempt')
 
     def test_nothing_indexed_when_no_new_lines(self):
-        # Arrange — cursor already at end of file
+        # Arrange - cursor already at end of file
         self._write_log(LINE_INFO)
         self._set_cursor(self.log_file.stat().st_size)
 
@@ -165,8 +165,8 @@ class ForwardLogsCommandTests(SimpleTestCase):
     # ------------------------------------------------------------------ log file missing
 
     def test_missing_log_file_does_not_raise(self):
-        # Arrange — log file does not exist
-        # Act / Assert — should not raise
+        # Arrange - log file does not exist
+        # Act / Assert - should not raise
         self._run()
 
     def test_missing_log_file_writes_zero_cursor(self):
@@ -190,7 +190,7 @@ class ForwardLogsCommandTests(SimpleTestCase):
     # ------------------------------------------------------------------ log rotation
 
     def test_cursor_reset_when_log_rotation_detected(self):
-        # Arrange — cursor is larger than the (new, short) log file
+        # Arrange - cursor is larger than the (new, short) log file
         self._write_log(LINE_INFO)
         large_fake_cursor = self.log_file.stat().st_size + 9999
         self._set_cursor(large_fake_cursor)
@@ -198,7 +198,7 @@ class ForwardLogsCommandTests(SimpleTestCase):
         # Act
         self._run()
 
-        # Assert — cursor reset and both lines forwarded from byte 0
+        # Assert - cursor reset and both lines forwarded from byte 0
         self.assertGreater(self._cursor(), 0)
         self.assertLessEqual(self._cursor(), self.log_file.stat().st_size)
 
@@ -229,7 +229,7 @@ class ForwardLogsCommandTests(SimpleTestCase):
              patch(f'{COMMAND}.bulk', side_effect=ESConnectionError('refused')):
             call_command('forward_logs_to_es')
 
-        # Assert — cursor stays at 0
+        # Assert - cursor stays at 0
         self.assertEqual(self._cursor(), 0)
 
     def test_es_unavailable_emits_warning(self):
@@ -255,7 +255,7 @@ class ForwardLogsCommandTests(SimpleTestCase):
         # Act
         _, mock_bulk = self._run()
 
-        # Assert — only LINE_INFO is indexed
+        # Assert - only LINE_INFO is indexed
         docs = mock_bulk.call_args[0][1]
         self.assertEqual(len(docs), 1)
         self.assertEqual(docs[0]['_source']['message'], 'User logged in')
@@ -279,12 +279,12 @@ class ForwardLogsCommandTests(SimpleTestCase):
         # Arrange
         self._write_log(LINE_INFO)
 
-        # Act — run twice (reset cursor each time to re-read)
+        # Act - run twice (reset cursor each time to re-read)
         _, mock_bulk_1 = self._run()
         self._set_cursor(0)
         _, mock_bulk_2 = self._run()
 
-        # Assert — doc IDs are identical
+        # Assert - doc IDs are identical
         id_1 = mock_bulk_1.call_args[0][1][0]['_id']
         id_2 = mock_bulk_2.call_args[0][1][0]['_id']
         self.assertEqual(id_1, id_2)
@@ -292,7 +292,7 @@ class ForwardLogsCommandTests(SimpleTestCase):
     # ------------------------------------------------------------------ empty lines
 
     def test_empty_lines_are_not_indexed(self):
-        # Arrange — file with blank lines between log entries
+        # Arrange - file with blank lines between log entries
         self.log_file.write_text(
             f'\n{LINE_INFO}\n\n{LINE_WARN}\n\n', encoding='utf-8'
         )
@@ -300,6 +300,6 @@ class ForwardLogsCommandTests(SimpleTestCase):
         # Act
         _, mock_bulk = self._run()
 
-        # Assert — only the two valid lines
+        # Assert - only the two valid lines
         docs = mock_bulk.call_args[0][1]
         self.assertEqual(len(docs), 2)

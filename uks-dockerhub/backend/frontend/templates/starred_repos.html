@@ -1,60 +1,62 @@
 {% extends "base.html" %}
-{% block title %}Starred Repositories{% endblock %}
+{% block title %}Starred Repositories — UKSHub{% endblock %}
 {% block extra_head %}
 <style>
-    body { align-items: flex-start; padding-top: 40px; }
-    .repo-container { width: 700px; max-width: 95vw; }
-    .repo-container h1 { color: #2d3a4b; text-align: center; margin-bottom: 1.5rem; }
-    .repo { background: #fff; border: 1px solid #d1d9e6; border-radius: 12px; padding: 16px 20px; margin-bottom: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-    .repo h3 { margin: 0 0 6px; color: #2d3a4b; }
-    .repo p { margin: 4px 0; }
-    .muted { color: #666; font-size: 14px; }
-    .official-badge { background: #1a7f37; color: #fff; font-size: 12px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; }
-    .user-badge { background: #0969da; color: #fff; font-size: 11px; padding: 2px 6px; border-radius: 4px; margin-left: 6px; }
-    .empty-msg { text-align: center; color: #666; margin-top: 2rem; }
-    .back-link { text-align: center; margin-top: 1.5rem; }
-    .back-link a { color: #5b7be6; font-weight: 500; text-decoration: none; }
+    .repo-card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 16px 20px;
+        margin-bottom: 12px;
+        transition: box-shadow 0.15s;
+    }
+    .repo-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.08); }
+    .repo-name { margin: 0 0 6px; font-size: 1rem; font-weight: 700; color: #1a2636; }
+    .repo-desc { color: #555; font-size: 0.9rem; margin-bottom: 6px; }
+    .repo-meta { color: #888; font-size: 0.82rem; }
+    .badge-official { background: #1a7f37; color: #fff; font-size: 11px; padding: 2px 7px; border-radius: 4px; margin-left: 6px; font-weight: 600; }
+    .badge-publisher { background: #0969da; color: #fff; font-size: 11px; padding: 2px 7px; border-radius: 4px; margin-left: 6px; font-weight: 600; }
+    .page-header { margin-bottom: 1.5rem; }
+    .page-header h1 { margin: 0; font-size: 1.6rem; color: #1a2636; }
 </style>
 {% endblock %}
 {% block content %}
-<div class="repo-container">
-    <h1>My Starred Repositories</h1>
+<div class="page-content">
+    <div class="page-header">
+        <h1>Starred Repositories</h1>
+    </div>
 
     {% if repositories %}
         {% for repo in repositories %}
-            <div class="repo">
-                <h3>
-                    {% if repo.is_official %}
-                        {{ repo.name }}
-                        <span class="official-badge">Docker Official Image</span>
-                    {% else %}
-                        {{ repo.owner.username }}/{{ repo.name }}
-                    {% endif %}
-                    {% if repo.owner.badge == 'verified_publisher' %}
-                        <span class="user-badge">Verified Publisher</span>
-                    {% elif repo.owner.badge == 'sponsored_oss' %}
-                        <span class="user-badge">Sponsored OSS</span>
-                    {% endif %}
-                </h3>
-                {% if repo.description %}
-                    <p>{{ repo.description }}</p>
+        <div class="repo-card">
+            <div class="repo-name">
+                {% if repo.is_official %}
+                    {{ repo.name }}
+                    <span class="badge-official">Docker Official Image</span>
                 {% else %}
-                    <p class="muted">No description.</p>
+                    {{ repo.owner.username }}/{{ repo.name }}
                 {% endif %}
-                <p class="muted">
-                    <span>{{ repo.stars }} stars</span>
-                    &nbsp;&nbsp; Created: {{ repo.created_at|date:"Y-m-d H:i" }}
-                </p>
+                {% if repo.owner.badge == 'verified_publisher' %}
+                    <span class="badge-publisher">Verified Publisher</span>
+                {% elif repo.owner.badge == 'sponsored_oss' %}
+                    <span class="badge-publisher">Sponsored OSS</span>
+                {% endif %}
             </div>
+            <div class="repo-desc">
+                {% if repo.description %}{{ repo.description }}{% else %}<span style="color:#aaa;">No description.</span>{% endif %}
+            </div>
+            <div class="repo-meta">{{ repo.stars }} stars &nbsp;&middot;&nbsp; {{ repo.created_at|date:"Y-m-d" }}</div>
+        </div>
         {% endfor %}
     {% else %}
-        <p class="empty-msg">You haven't starred any repositories yet.</p>
+        <div style="text-align:center; color:#888; padding:4rem 0;">
+            <p>You haven't starred any repositories yet.</p>
+            <a href="{% url 'public-repositories' %}">Browse repositories →</a>
+        </div>
     {% endif %}
 
-    <div class="back-link">
-        <a href="{% url 'profile' %}">Back to Profile</a>
-        &nbsp;&nbsp;
-        <a href="{% url 'public-repositories' %}">Browse Public Repositories</a>
+    <div style="margin-top:1.5rem; font-size:0.9rem;">
+        <a href="{% url 'public-repositories' %}">← Browse Public Repositories</a>
     </div>
 </div>
 {% endblock %}

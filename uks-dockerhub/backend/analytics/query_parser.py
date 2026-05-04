@@ -82,7 +82,7 @@ def tokenize(text: str) -> List[Token]:
             while j < n and text[j] != '"':
                 j += 1
             if j >= n:
-                raise QueryParseError("Unterminated string literal — missing closing '\"'")
+                raise QueryParseError("Unterminated string literal - missing closing '\"'")
             tokens.append(Token(TOK_STRING, text[i + 1:j]))
             i = j + 1
 

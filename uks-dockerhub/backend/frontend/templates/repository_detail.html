@@ -1,124 +1,71 @@
 {% extends "base.html" %}
-
-{% block title %}{{ repo.name }}{% endblock %}
-
+{% block title %}{{ repo.name }} — UKSHub{% endblock %}
 {% block extra_head %}
 <style>
-    body {
-        background: #f6f8fa;
-    }
-
-    .repo-detail-container {
-        max-width: 900px;
-        margin: 60px auto;
-        padding: 0 20px;
-    }
-
-    .repo-card {
+    .repo-detail-card {
         background: #fff;
-        border: 1px solid #d1d9e6;
+        border: 1px solid #e2e8f0;
         border-radius: 12px;
-        padding: 24px 28px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        padding: 28px 32px;
+        max-width: 860px;
     }
-
-    .repo-title {
-        font-size: 28px;
+    .repo-detail-title {
+        font-size: 1.6rem;
         font-weight: 700;
-        margin-bottom: 10px;
-        color: #2d3a4b;
+        color: #1a2636;
+        margin: 0 0 10px;
     }
-
-    .repo-sub {
+    .repo-detail-desc {
         color: #555;
-        font-size: 16px;
-        margin-bottom: 20px;
+        font-size: 0.97rem;
+        line-height: 1.6;
+        margin-bottom: 1.5rem;
     }
-
-    .repo-meta {
+    .meta-row {
         display: flex;
-        gap: 20px;
+        gap: 12px;
         flex-wrap: wrap;
-        margin-top: 20px;
-        font-size: 14px;
+    }
+    .meta-chip {
+        background: #f4f6f9;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 8px 14px;
+        font-size: 0.88rem;
         color: #444;
     }
-
-    .meta-box {
-        background: #f6f8fa;
-        padding: 10px 14px;
-        border-radius: 8px;
-        border: 1px solid #e1e4e8;
-    }
-
-    .badge {
-        display: inline-block;
-        background: #1a7f37;
-        color: #fff;
-        font-size: 12px;
-        padding: 3px 8px;
-        border-radius: 6px;
-        margin-left: 8px;
-    }
-
-    .stars {
-        font-weight: 600;
-        color: #f5c518;
-    }
-
-    .back-link {
-        display: inline-block;
-        margin-bottom: 20px;
-        text-decoration: none;
-        color: #0969da;
-        font-size: 14px;
-    }
-
-    .back-link:hover {
-        text-decoration: underline;
-    }
+    .badge-official { background: #1a7f37; color: #fff; font-size: 12px; padding: 3px 9px; border-radius: 5px; margin-left: 8px; font-weight: 600; }
 </style>
 {% endblock %}
-
 {% block content %}
-<div class="repo-detail-container">
+<div class="page-content">
+    <div style="margin-bottom:1.25rem; font-size:0.9rem;">
+        <a href="{% url 'public-repositories' %}">← Back to repositories</a>
+    </div>
 
-    <a href="{% url 'public-repositories' %}" class="back-link">
-        ← Back to repositories
-    </a>
-
-    <div class="repo-card">
-        <div class="repo-title">
+    <div class="repo-detail-card">
+        <div class="repo-detail-title">
             {% if repo.is_official %}
                 {{ repo.name }}
-                <span class="badge">Official</span>
+                <span class="badge-official">Official</span>
             {% else %}
                 {{ repo.owner.username }}/{{ repo.name }}
             {% endif %}
         </div>
 
-        <div class="repo-sub">
+        <div class="repo-detail-desc">
             {% if repo.description %}
                 {{ repo.description }}
             {% else %}
-                No description provided.
+                <span style="color:#aaa;">No description provided.</span>
             {% endif %}
         </div>
 
-        <div class="repo-meta">
-            <div class="meta-box">
-                ⭐ <span class="stars">{{ repo.stars }}</span> stars
-            </div>
-
-            <div class="meta-box">
-                📅 Created: {{ repo.created_at|date:"Y-m-d H:i" }}
-            </div>
-
-            <div class="meta-box">
-                👤 Owner: {{ repo.owner.username }}
-            </div>
+        <div class="meta-row">
+            <div class="meta-chip"><strong>{{ repo.stars }}</strong> stars</div>
+            <div class="meta-chip">Created: {{ repo.created_at|date:"Y-m-d H:i" }}</div>
+            <div class="meta-chip">Owner: {{ repo.owner.username }}</div>
         </div>
     </div>
-
 </div>
 {% endblock %}

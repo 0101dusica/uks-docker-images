@@ -59,7 +59,7 @@ class Command(BaseCommand):
         file_size = log_path.stat().st_size
 
         if file_size < cursor:
-            # Log was rotated — new file is smaller than last cursor position
+            # Log was rotated - new file is smaller than last cursor position
             logger.info(
                 'Log rotation detected (file_size=%d < cursor=%d); resetting cursor.',
                 file_size, cursor,

@@ -1,22 +1,25 @@
 {% extends "base.html" %}
-{% block title %}Register{% endblock %}
+{% block title %}Sign Up — UKSHub{% endblock %}
 {% block content %}
-<div class="form-box">
-    <h2>Registration</h2>
+<div class="page-centered">
+<div class="form-box" style="max-width:520px;">
+    <h2>Create Account</h2>
     <form method="post">
         {% csrf_token %}
         {% if form.non_field_errors %}
             <ul class="errorlist">{% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}</ul>
         {% endif %}
-        <div class="form-group">
-            <label for="id_first_name">First Name</label>
-            <input type="text" name="first_name" id="id_first_name" class="form-input" value="{{ form.first_name.value|default:'' }}" required />
-            {% for error in form.first_name.errors %}<div class="errorlist">{{ error }}</div>{% endfor %}
-        </div>
-        <div class="form-group">
-            <label for="id_last_name">Last Name</label>
-            <input type="text" name="last_name" id="id_last_name" class="form-input" value="{{ form.last_name.value|default:'' }}" required />
-            {% for error in form.last_name.errors %}<div class="errorlist">{{ error }}</div>{% endfor %}
+        <div style="display:flex; gap:1rem;">
+            <div class="form-group" style="flex:1;">
+                <label for="id_first_name">First Name</label>
+                <input type="text" name="first_name" id="id_first_name" value="{{ form.first_name.value|default:'' }}" required />
+                {% for error in form.first_name.errors %}<div class="errorlist">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="form-group" style="flex:1;">
+                <label for="id_last_name">Last Name</label>
+                <input type="text" name="last_name" id="id_last_name" value="{{ form.last_name.value|default:'' }}" required />
+                {% for error in form.last_name.errors %}<div class="errorlist">{{ error }}</div>{% endfor %}
+            </div>
         </div>
         <div class="form-group">
             <label for="id_username">Username</label>
@@ -25,7 +28,7 @@
         </div>
         <div class="form-group">
             <label for="id_email">Email</label>
-            <input type="email" name="email" id="id_email" class="form-input" value="{{ form.email.value|default:'' }}" required />
+            <input type="email" name="email" id="id_email" value="{{ form.email.value|default:'' }}" required />
             {% for error in form.email.errors %}<div class="errorlist">{{ error }}</div>{% endfor %}
         </div>
         <div class="form-group">
@@ -38,11 +41,12 @@
             {{ form.password2 }}
             {% for error in form.password2.errors %}<div class="errorlist">{{ error }}</div>{% endfor %}
         </div>
-        <button type="submit" class="submit-btn">Register</button>
-        <div style="text-align:center; margin-top:1rem;">
-            <span>Already have an account?</span>
-            <a href="/login/" style="color:#5b7be6; font-weight:500; text-decoration:none; margin-left:0.5rem;">Log in</a>
+        <button type="submit" class="submit-btn">Create Account</button>
+        <div style="text-align:center; margin-top:1.2rem; font-size:0.9rem; color:#666;">
+            Already have an account?
+            <a href="{% url 'login' %}" style="font-weight:600; margin-left:4px;">Sign In</a>
         </div>
     </form>
+</div>
 </div>
 {% endblock %}
