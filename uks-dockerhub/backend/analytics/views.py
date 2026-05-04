@@ -127,7 +127,7 @@ def analytics_search_view(request):
             'searched': True,
         })
 
-        # Validate the query syntax before hitting ES — bad input gets a yellow banner, not a 500.
+        # Validate the query syntax before hitting ES - bad input gets a yellow banner, not a 500.
         parsed_query = None
         if query_str:
             try:
@@ -138,7 +138,7 @@ def analytics_search_view(request):
 
         body = build_es_query(date_from, date_to, level, text, parsed_query)
 
-        # size must go inside the body — passing it as a separate kwarg alongside body is deprecated in v8.
+        # size must go inside the body - passing it as a separate kwarg alongside body is deprecated in v8.
         body['size'] = 100
 
         try:

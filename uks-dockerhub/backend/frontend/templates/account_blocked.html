@@ -1,9 +1,14 @@
 {% extends "base.html" %}
-{% block title %}Account Blocked{% endblock %}
+{% block title %}Account Blocked — UKSHub{% endblock %}
 {% block content %}
-<div class="form-box" style="min-width:400px; text-align:center; margin: 4rem auto;">
-    <h2 style="color:#b00;">Account Blocked</h2>
-    <p style="margin:2rem 0; font-size:1.15rem;">Your account has been blocked.<br>
-    If you believe this is a mistake, please contact support at <a href="mailto:support@example.com" style="color:#5b7be6; font-weight:500; text-decoration:none;">support@example.com</a>.</p>
+<div class="page-centered">
+<div class="form-box" style="text-align:center;">
+    <h2 style="color:#dc3545;">Account Blocked</h2>
+    <p style="color:#555; font-size:0.95rem; margin:1.5rem 0;">
+        Your account has been blocked by an administrator.<br>
+        If you believe this is a mistake, please contact support.
+    </p>
+    <a href="mailto:support@example.com" style="font-weight:600;">support@example.com</a>
+</div>
 </div>
 {% endblock %}

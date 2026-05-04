@@ -8,7 +8,7 @@ from users.models import User
 
 
 class BuildEsQueryTests(TestCase):
-    """Unit tests for the build_es_query helper — no HTTP, no ES."""
+    """Unit tests for the build_es_query helper - no HTTP, no ES."""
 
     def test_no_filters_returns_match_all_sorted_by_asctime(self):
         body = build_es_query('', '', '', '', None)

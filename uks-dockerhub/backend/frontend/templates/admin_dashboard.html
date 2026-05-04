@@ -1,129 +1,200 @@
 {% extends "base.html" %}
-{% block title %}Admin Dashboard{% endblock %}
+{% block title %}Admin Dashboard — UKSHub{% endblock %}
 {% block extra_head %}
 <style>
-    .dashboard-section { min-width: 340px; margin-bottom: 2rem; }
-    .official-badge { background: #1a7f37; color: #fff; font-size: 12px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; }
-    .repo-item { background: #f5f7fa; border: 1px solid #d1d9e6; border-radius: 8px; padding: 12px 16px; margin-bottom: 8px; }
-    .repo-item h4 { margin: 0 0 4px; }
-    .repo-item p { margin: 0; color: #666; font-size: 14px; }
-    .form-row { margin-bottom: 12px; }
-    .form-row label { display: block; margin-bottom: 4px; font-weight: 600; }
-    .form-row input, .form-row textarea { width: 100%; padding: 8px; border: 1px solid #d1d9e6; border-radius: 6px; box-sizing: border-box; }
-    .btn-create { padding: 8px 20px; background: #1a7f37; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
-    .btn-create:hover { background: #15692d; }
-    .error-text { color: #b00; font-size: 13px; margin-top: 6px; }
+    .dashboard-grid { display: flex; flex-wrap: wrap; gap: 1.5rem; align-items: flex-start; }
+    .dashboard-panel {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1.5rem 2rem;
+        flex: 1 1 420px;
+        min-width: 340px;
+        max-width: 680px;
+    }
+    .panel-title { font-size: 1.1rem; font-weight: 700; color: #1a2636; margin: 0 0 1.25rem; }
+    .official-badge { background: #1a7f37; color: #fff; font-size: 11px; padding: 2px 7px; border-radius: 4px; margin-left: 6px; font-weight: 600; }
+
+    /* Repo items */
+    .repo-item { background: #f4f6f9; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 16px; margin-bottom: 8px; }
+    .repo-item-header { display: flex; justify-content: space-between; align-items: flex-start; }
+    .repo-item h4 { margin: 0 0 4px; font-size: 0.95rem; color: #1a2636; }
+    .repo-item p { margin: 0; color: #666; font-size: 0.85rem; }
+    .repo-item-meta { font-size: 0.78rem; color: #999; margin-top: 4px; }
+    .repo-item-actions { display: flex; gap: 6px; flex-shrink: 0; margin-left: 12px; }
+
+    /* Create form */
+    .form-row { margin-bottom: 10px; }
+    .form-row label { display: block; margin-bottom: 3px; font-size: 0.85rem; font-weight: 600; color: #2d3a4b; }
+    .form-row input, .form-row textarea { width: 100%; padding: 8px 10px; border: 1px solid #d1d9e6; border-radius: 6px; font-size: 0.9rem; box-sizing: border-box; font-family: inherit; }
+    .form-row input:focus, .form-row textarea:focus { border-color: #0db7ed; outline: none; }
+
+    /* User search */
+    .search-row { display: flex; gap: 8px; margin-bottom: 1rem; }
+    .search-row input { flex: 1; padding: 8px 12px; border: 1px solid #d1d9e6; border-radius: 6px; font-size: 0.9rem; }
+    .search-row button { padding: 8px 16px; background: #1e2a3a; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 0.9rem; font-weight: 600; }
+    .search-row button:hover { background: #2d3a4b; }
+
+    /* Table */
+    .data-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    .data-table th { text-align: left; padding: 8px 10px; background: #f4f6f9; color: #2d3a4b; font-weight: 700; border-bottom: 2px solid #e2e8f0; }
+    .data-table td { padding: 8px 10px; border-bottom: 1px solid #f0f2f5; vertical-align: middle; }
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table td.email { word-break: break-all; max-width: 160px; font-size: 0.82rem; color: #555; }
+
+    /* Buttons */
+    .btn-sm { padding: 4px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: 1px solid #e2e8f0; background: #f4f6f9; color: #2d3a4b; text-decoration: none; transition: background 0.15s; }
+    .btn-sm:hover { background: #e8ecf0; }
+    .btn-primary { background: #0db7ed; color: #fff; border: none; padding: 8px 20px; border-radius: 6px; font-size: 0.9rem; font-weight: 700; cursor: pointer; transition: background 0.2s; }
+    .btn-primary:hover { background: #0aa3d4; }
+    .btn-danger { padding: 4px 12px; border-radius: 6px; border: 1px solid #f5c6c6; background: #ffeaea; color: #dc3545; cursor: pointer; font-size: 0.8rem; font-weight: 600; }
+    .btn-danger:hover { background: #ffdbdb; }
+
+    /* Popup */
+    .popup-overlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.35); backdrop-filter: blur(3px); z-index: 999; }
+    .popup-box { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); background: #fff; border-radius: 12px; box-shadow: 0 8px 40px rgba(0,0,0,0.15); padding: 2rem; min-width: 360px; max-width: 480px; z-index: 1000; }
+    .popup-field { margin-bottom: 8px; font-size: 0.92rem; }
+    .popup-field strong { color: #2d3a4b; }
+    .popup-actions { margin-top: 1.5rem; display: flex; gap: 10px; justify-content: flex-end; }
+    .popup-section { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e2e8f0; }
+    .popup-section label { font-size: 0.85rem; font-weight: 700; display: block; margin-bottom: 6px; color: #2d3a4b; }
+    .popup-section select { width: 100%; padding: 7px 10px; border: 1px solid #d1d9e6; border-radius: 6px; font-size: 0.9rem; }
+    .btn-badge { margin-top: 8px; padding: 6px 16px; border-radius: 6px; border: none; background: #0db7ed; color: #fff; cursor: pointer; font-size: 0.88rem; font-weight: 600; }
+    .btn-badge:hover { background: #0aa3d4; }
+
+    .error-text { color: #dc3545; font-size: 0.85rem; margin-top: 6px; }
+    .divider { border: none; border-top: 1px solid #e2e8f0; margin: 1.5rem 0; }
 </style>
 {% endblock %}
 {% block content %}
-<div style="display:flex; flex-wrap:wrap; gap:2.5rem; justify-content:center; align-items:flex-start;">
-<div class="form-box dashboard-section" style="flex:1 1 420px; max-width:640px;">
-    <h2 style="margin-bottom: 1.5rem;">Official Repositories</h2>
+<div class="page-content">
+    <h1 style="margin:0 0 1.5rem; font-size:1.6rem; color:#1a2636;">Admin Dashboard</h1>
 
-    <h3>Create Official Repository</h3>
-    <form method="post" action="{% url 'admin-dashboard' %}">
-        {% csrf_token %}
-        <input type="hidden" name="create_official" value="1">
-        <div class="form-row">
-            <label for="id_name">Repository Name</label>
-            {{ official_form.name }}
-        </div>
-        <div class="form-row">
-            <label for="id_description">Description</label>
-            {{ official_form.description }}
-        </div>
-        <button type="submit" class="btn-create">Create Official Repository</button>
-        {% if official_form_error %}
-            <p class="error-text">{{ official_form_error }}</p>
-        {% endif %}
-    </form>
+    <div class="dashboard-grid">
 
-    <hr style="margin: 1.5rem 0;">
+        <!-- Official Repositories Panel -->
+        <div class="dashboard-panel">
+            <p class="panel-title">Official Repositories</p>
 
-    <h3>Existing Official Repositories</h3>
-    {% if official_repos %}
-        {% for repo in official_repos %}
-            <div class="repo-item" style="display:flex; justify-content:space-between; align-items:flex-start;">
-                <div>
-                    <h4>{{ repo.name }} <span class="official-badge">Docker Official Image</span></h4>
-                    <p>{{ repo.description|default:"No description." }}</p>
-                    <p style="font-size: 12px; color: #999; margin-top: 4px;">Created: {{ repo.created_at|date:"Y-m-d H:i" }} | Stars: {{ repo.stars }}</p>
+            <h3 style="font-size:0.95rem; color:#2d3a4b; margin:0 0 1rem;">Create Official Repository</h3>
+            <form method="post" action="{% url 'admin-dashboard' %}">
+                {% csrf_token %}
+                <input type="hidden" name="create_official" value="1">
+                <div class="form-row">
+                    <label>Repository Name</label>
+                    {{ official_form.name }}
                 </div>
-                <div style="display:flex; gap:8px; flex-shrink:0; margin-left:16px;">
-                    <a href="{% url 'edit-official-repo' repo.id %}" style="padding:4px 12px; border-radius:6px; border:1px solid #d1d9e6; background:#f5f7fa; text-decoration:none; color:#2d3a4b; font-size:13px;">Edit</a>
-                    <form method="post" action="{% url 'delete-official-repo' repo.id %}" style="margin:0;" onsubmit="return confirm('Delete this official repository?');">
-                        {% csrf_token %}
-                        <button type="submit" style="padding:4px 12px; border-radius:6px; border:1px solid #b0b0b0; background:#ffeaea; color:#b00; cursor:pointer; font-size:13px;">Delete</button>
-                    </form>
+                <div class="form-row">
+                    <label>Description</label>
+                    {{ official_form.description }}
                 </div>
+                <button type="submit" class="btn-primary">Create Official Repository</button>
+                {% if official_form_error %}
+                    <p class="error-text">{{ official_form_error }}</p>
+                {% endif %}
+            </form>
+
+            <hr class="divider">
+
+            <h3 style="font-size:0.95rem; color:#2d3a4b; margin:0 0 1rem;">Existing Official Repositories</h3>
+            {% if official_repos %}
+                {% for repo in official_repos %}
+                <div class="repo-item">
+                    <div class="repo-item-header">
+                        <div>
+                            <h4>{{ repo.name }} <span class="official-badge">Docker Official Image</span></h4>
+                            <p>{{ repo.description|default:"No description." }}</p>
+                            <p class="repo-item-meta">{{ repo.created_at|date:"Y-m-d H:i" }} &middot; ⭐ {{ repo.stars }}</p>
+                        </div>
+                        <div class="repo-item-actions">
+                            <a href="{% url 'edit-official-repo' repo.id %}" class="btn-sm">Edit</a>
+                            <form method="post" action="{% url 'delete-official-repo' repo.id %}" style="margin:0;"
+                                  onsubmit="return confirm('Delete this official repository?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-danger">Delete</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p style="color:#888; font-size:0.9rem;">No official repositories yet.</p>
+            {% endif %}
+        </div>
+
+        <!-- Users Panel -->
+        <div class="dashboard-panel">
+            <p class="panel-title">Users</p>
+            <form method="get" action="{% url 'admin-dashboard' %}" class="search-row">
+                <input type="text" name="user_search" placeholder="Search by username, email or name..." value="{{ user_search }}">
+                <button type="submit">Search</button>
+            </form>
+            <div style="overflow-x:auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th style="text-align:center;">Status</th>
+                            <th style="text-align:center;">Details</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>{{ user.username }}</td>
+                            <td class="email">{{ user.email }}</td>
+                            <td style="text-align:center;">
+                                {% if user.is_active %}
+                                    <span style="color:#1a7f37; font-weight:600; font-size:0.82rem;">Active</span>
+                                {% else %}
+                                    <span style="color:#dc3545; font-weight:600; font-size:0.82rem;">Blocked</span>
+                                {% endif %}
+                            </td>
+                            <td style="text-align:center;">
+                                <button onclick="showUserDetails('{{ user.id }}')" class="btn-sm">View</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
-        {% endfor %}
-    {% else %}
-        <p style="color: #666;">No official repositories yet.</p>
-    {% endif %}
+        </div>
+
+    </div>
 </div>
 
-<div class="form-box dashboard-section" style="flex:1 1 420px; max-width:640px;">
-    <h2 style="margin-bottom: 1.5rem;">Users</h2>
-    <form method="get" action="{% url 'admin-dashboard' %}" style="display:flex; gap:10px; margin-bottom:1rem;">
-        <input type="text" name="user_search" placeholder="Search by username, email or name..." value="{{ user_search }}"
-            style="flex:1; padding:8px 12px; border:1px solid #d1d9e6; border-radius:6px; font-size:14px;">
-        <button type="submit" style="padding:8px 20px; background:#2d3a4b; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:14px;">Search</button>
-    </form>
-    <div style="overflow-x: auto;">
-    <table style="width:100%; border-collapse:collapse;">
-        <thead>
-            <tr>
-                <th style="text-align:left; padding: 8px 12px;">Username</th>
-                <th style="text-align:left; padding: 8px 12px;">Email</th>
-                <th style="text-align:center; padding: 8px 12px;">Status</th>
-                <th style="text-align:center; padding: 8px 12px;">Details</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for user in users %}
-            <tr>
-                <td style="text-align:left; padding: 8px 12px;">{{ user.username }}</td>
-                <td style="text-align:left; padding: 8px 12px; word-break:break-all; max-width:180px;">{{ user.email }}</td>
-                <td style="text-align:center; padding: 8px 12px;">{% if user.is_active %}Active{% else %}Blocked{% endif %}</td>
-                <td style="text-align:center; padding: 8px 12px;"><button onclick="showUserDetails('{{ user.id }}')" style="padding: 4px 12px; border-radius: 6px; border: 1px solid #b0b0b0; background: #f5f7fa; cursor:pointer;">View</button></td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<!-- User Details Popup -->
+<div class="popup-overlay" id="overlay" onclick="closePopup()"></div>
+<div class="popup-box" id="user-popup">
+    <div id="popup-content"></div>
+    <div class="popup-section">
+        <label>Assign Badge:</label>
+        <select id="badge-select">
+            <option value="none">None</option>
+            <option value="verified_publisher">Verified Publisher</option>
+            <option value="sponsored_oss">Sponsored OSS</option>
+        </select>
+        <button id="badge-btn" class="btn-badge">Save Badge</button>
     </div>
-    <div id="overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(220,230,250,0.6); backdrop-filter: blur(4px); z-index:999;"></div>
-    <div id="user-popup" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#fff; border-radius:12px; box-shadow:0 4px 24px rgba(0,0,0,0.08); padding:2rem; min-width:360px; z-index:1000;">
-        <span id="popup-content"></span>
-        <div style="margin-top:1rem;">
-            <label style="font-weight:600; display:block; margin-bottom:4px;">Assign Badge:</label>
-            <select id="badge-select" style="padding:6px 10px; border:1px solid #d1d9e6; border-radius:6px; width:100%;">
-                <option value="none">None</option>
-                <option value="verified_publisher">Verified Publisher</option>
-                <option value="sponsored_oss">Sponsored OSS</option>
-            </select>
-            <button id="badge-btn" style="margin-top:8px; padding:6px 16px; border-radius:6px; border:none; background:#0969da; color:#fff; cursor:pointer;">Save Badge</button>
-        </div>
-        <div style="margin-top:1.5rem; display:flex; gap:1rem; justify-content:flex-end;">
-            <button id="block-btn" style="padding: 6px 16px; border-radius: 6px; border: 1px solid #b0b0b0; background: #ffeaea; color:#b00; cursor:pointer;">Block user</button>
-            <button id="unblock-btn" style="padding: 6px 16px; border-radius: 6px; border: 1px solid #b0b0b0; background: #eaffea; color:#1a7f37; cursor:pointer;">Unblock user</button>
-            <button onclick="closePopup()" style="padding: 6px 16px; border-radius: 6px; border: 1px solid #b0b0b0; background: #f5f7fa; cursor:pointer;">Close</button>
-        </div>
+    <div class="popup-actions">
+        <button id="block-btn" class="btn-danger">Block user</button>
+        <button id="unblock-btn" style="padding:6px 16px; border-radius:6px; border:1px solid #bbf7d0; background:#dcfce7; color:#166534; cursor:pointer; font-size:0.88rem; font-weight:600;">Unblock user</button>
+        <button onclick="closePopup()" class="btn-sm">Close</button>
     </div>
 </div>
-</div>
+
 <script>
 function showUserDetails(userId) {
     fetch('/admin-dashboard/user/' + userId + '/details/')
         .then(resp => resp.json())
         .then(data => {
             document.getElementById('popup-content').innerHTML =
-                `<b>Username:</b> ${data.username}<br>
-                 <b>First name:</b> ${data.first_name || '-'}<br>
-                 <b>Last name:</b> ${data.last_name || '-'}<br>
-                 <b>Email:</b> ${data.email}<br>
-                 <b>Status:</b> ${data.status}<br>
-                 <b>Badge:</b> ${data.badge === 'none' ? 'None' : data.badge.replace('_', ' ')}`;
+                `<div class="popup-field"><strong>Username:</strong> ${data.username}</div>
+                 <div class="popup-field"><strong>Name:</strong> ${data.first_name || ''} ${data.last_name || ''}</div>
+                 <div class="popup-field"><strong>Email:</strong> ${data.email}</div>
+                 <div class="popup-field"><strong>Status:</strong> ${data.status}</div>
+                 <div class="popup-field"><strong>Badge:</strong> ${data.badge === 'none' ? 'None' : data.badge.replace('_', ' ')}</div>`;
             document.getElementById('badge-select').value = data.badge;
             document.getElementById('badge-btn').onclick = function() {
                 var badge = document.getElementById('badge-select').value;

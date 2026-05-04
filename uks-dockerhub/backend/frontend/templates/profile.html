@@ -1,74 +1,62 @@
 {% extends "base.html" %}
-{% block title %}My Profile{% endblock %}
+{% block title %}Profile — UKSHub{% endblock %}
 {% block extra_head %}
 <style>
-    .profile-box { min-width: 450px; max-width: 550px; }
-    .form-row { margin-bottom: 14px; }
-    .form-row label { display: block; margin-bottom: 4px; font-weight: 600; color: #2d3a4b; }
-    .form-row input { width: 100%; padding: 8px 12px; border: 1px solid #d1d9e6; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
-    .form-row input[disabled] { background: #f0f0f0; color: #666; }
-    .btn-save { padding: 8px 24px; background: #2d3a4b; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
-    .btn-save:hover { background: #1a2636; }
-    .info-row { margin-bottom: 10px; font-size: 14px; color: #444; }
-    .info-row strong { color: #2d3a4b; }
-    .badge-tag { font-size: 12px; padding: 2px 8px; border-radius: 4px; }
-    .badge-verified { background: #0969da; color: #fff; }
-    .badge-sponsored { background: #0969da; color: #fff; }
-    .badge-none { background: #e0e0e0; color: #666; }
-    .success-msg { color: #1a7f37; background: #e6f4ea; padding: 8px 12px; border-radius: 6px; margin-bottom: 1rem; }
-    .error-msg { color: #b00; background: #ffeaea; padding: 8px 12px; border-radius: 6px; margin-bottom: 1rem; }
-    .profile-links { margin-top: 1.5rem; display: flex; gap: 1rem; }
-    .profile-links a { color: #5b7be6; text-decoration: none; font-weight: 500; }
+    .badge-tag { font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 600; }
+    .badge-verified, .badge-sponsored { background: #0969da; color: #fff; }
+    .badge-none { background: #e8ecf0; color: #666; }
 </style>
 {% endblock %}
 {% block content %}
-<div class="form-box profile-box">
-    <h2 style="margin-bottom: 1.5rem;">My Profile</h2>
+<div class="page-centered">
+<div class="form-box" style="max-width:520px;">
+    <h2>My Profile</h2>
 
     {% if success %}
-        <div class="success-msg">{{ success }}</div>
+        <div style="background:#e6f4ea; color:#1a7f37; padding:10px 14px; border-radius:8px; margin-bottom:1rem; font-size:0.9rem;">{{ success }}</div>
     {% endif %}
     {% if error %}
-        <div class="error-msg">{{ error }}</div>
+        <div style="background:#ffeaea; color:#dc3545; padding:10px 14px; border-radius:8px; margin-bottom:1rem; font-size:0.9rem;">{{ error }}</div>
     {% endif %}
 
-    <div class="info-row"><strong>Username:</strong> {{ user.username }}</div>
-    <div class="info-row"><strong>Role:</strong> {{ user.role }}</div>
-    <div class="info-row">
-        <strong>Badge:</strong>
-        {% if user.badge == 'verified_publisher' %}
-            <span class="badge-tag badge-verified">Verified Publisher</span>
-        {% elif user.badge == 'sponsored_oss' %}
-            <span class="badge-tag badge-sponsored">Sponsored OSS</span>
-        {% else %}
-            <span class="badge-tag badge-none">None</span>
-        {% endif %}
+    <div style="background:#f4f6f9; border-radius:10px; padding:1rem 1.25rem; margin-bottom:1.5rem; font-size:0.9rem; line-height:1.8;">
+        <div><strong>Username:</strong> {{ user.username }}</div>
+        <div><strong>Role:</strong> <span style="text-transform:capitalize;">{{ user.role }}</span></div>
+        <div>
+            <strong>Badge:</strong>
+            {% if user.badge == 'verified_publisher' %}
+                <span class="badge-tag badge-verified">Verified Publisher</span>
+            {% elif user.badge == 'sponsored_oss' %}
+                <span class="badge-tag badge-sponsored">Sponsored OSS</span>
+            {% else %}
+                <span class="badge-tag badge-none">None</span>
+            {% endif %}
+        </div>
     </div>
-
-    <hr style="margin: 1.5rem 0;">
 
     <form method="post">
         {% csrf_token %}
-        <div class="form-row">
+        <div class="form-group">
             <label for="first_name">First Name</label>
             <input type="text" name="first_name" id="first_name" value="{{ user.first_name }}">
         </div>
-        <div class="form-row">
+        <div class="form-group">
             <label for="last_name">Last Name</label>
             <input type="text" name="last_name" id="last_name" value="{{ user.last_name }}">
         </div>
-        <div class="form-row">
+        <div class="form-group">
             <label for="email">Email</label>
             <input type="email" name="email" id="email" value="{{ user.email }}">
         </div>
-        <button type="submit" class="btn-save">Save Changes</button>
+        <button type="submit" class="submit-btn">Save Changes</button>
     </form>
 
     {% if user.role == 'user' %}
-    <div class="profile-links">
-        <a href="{% url 'starred-repos' %}">My Starred Repositories</a>
+    <div style="display:flex; gap:1rem; justify-content:center; margin-top:1.5rem; font-size:0.9rem;">
+        <a href="{% url 'starred-repos' %}">Starred Repos</a>
         <a href="{% url 'my-repositories' %}">My Repositories</a>
     </div>
     {% endif %}
+</div>
 </div>
 {% endblock %}
