@@ -1,6 +1,6 @@
 from django.urls import path
 from .views import registration_view, registration_success_view, login_view, login_success_view, admin_dashboard_view, \
-    superadmin_dashboard_view, user_details_view, block_user_view, assign_badge_view, \
+    superadmin_dashboard_view, user_details_view, repository_detail_view, block_user_view, assign_badge_view, \
     edit_official_repository_view, delete_official_repository_view, delete_registry_tag_view, \
     superadmin_user_details_view, \
     superadmin_user_block_view, superadmin_admin_details_view, superadmin_admin_block_view, logout_view, \
@@ -31,6 +31,7 @@ urlpatterns = [
     path('superadmin-dashboard/admin/<int:admin_id>/details/', superadmin_admin_details_view, name='superadmin-admin-details'),
     path('superadmin-dashboard/admin/<int:admin_id>/block/', superadmin_admin_block_view, name='superadmin-admin-block'),
     path('public-repositories/', public_repositories_view, name='public-repositories'),
+    path('repository/<int:id>/', repository_detail_view, name='repository-detail'),
     path('my-repositories/', my_repositories_view, name='my-repositories'),
     path('repositories/create/', create_repository_view, name='create-repository'),
     path('repositories/<int:repo_id>/edit/', edit_repository_view, name='edit-repository'),
@@ -39,4 +40,5 @@ urlpatterns = [
     path('repositories/<int:repo_id>/tags/', manage_tags_view, name='manage-tags'),
     path('repositories/<int:repo_id>/tags/<int:tag_id>/delete/', delete_tag_view, name='delete-tag'),
     path('repositories/<int:repo_id>/registry-tags/<str:tag_name>/delete/', delete_registry_tag_view, name='delete-registry-tag'),
+
 ]
