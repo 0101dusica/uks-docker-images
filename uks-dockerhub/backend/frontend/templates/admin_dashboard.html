@@ -2,7 +2,7 @@
 {% block title %}Admin Dashboard{% endblock %}
 {% block extra_head %}
 <style>
-    .dashboard-section { min-width: 600px; margin-bottom: 2rem; }
+    .dashboard-section { min-width: 340px; margin-bottom: 2rem; }
     .official-badge { background: #1a7f37; color: #fff; font-size: 12px; padding: 2px 8px; border-radius: 4px; margin-left: 8px; }
     .repo-item { background: #f5f7fa; border: 1px solid #d1d9e6; border-radius: 8px; padding: 12px 16px; margin-bottom: 8px; }
     .repo-item h4 { margin: 0 0 4px; }
@@ -16,7 +16,8 @@
 </style>
 {% endblock %}
 {% block content %}
-<div class="form-box dashboard-section">
+<div style="display:flex; flex-wrap:wrap; gap:2.5rem; justify-content:center; align-items:flex-start;">
+<div class="form-box dashboard-section" style="flex:1 1 420px; max-width:640px;">
     <h2 style="margin-bottom: 1.5rem;">Official Repositories</h2>
 
     <h3>Create Official Repository</h3>
@@ -62,13 +63,14 @@
     {% endif %}
 </div>
 
-<div class="form-box dashboard-section">
+<div class="form-box dashboard-section" style="flex:1 1 420px; max-width:640px;">
     <h2 style="margin-bottom: 1.5rem;">Users</h2>
     <form method="get" action="{% url 'admin-dashboard' %}" style="display:flex; gap:10px; margin-bottom:1rem;">
         <input type="text" name="user_search" placeholder="Search by username, email or name..." value="{{ user_search }}"
             style="flex:1; padding:8px 12px; border:1px solid #d1d9e6; border-radius:6px; font-size:14px;">
         <button type="submit" style="padding:8px 20px; background:#2d3a4b; color:#fff; border:none; border-radius:6px; cursor:pointer; font-size:14px;">Search</button>
     </form>
+    <div style="overflow-x: auto;">
     <table style="width:100%; border-collapse:collapse;">
         <thead>
             <tr>
@@ -82,13 +84,14 @@
             {% for user in users %}
             <tr>
                 <td style="text-align:left; padding: 8px 12px;">{{ user.username }}</td>
-                <td style="text-align:left; padding: 8px 12px;">{{ user.email }}</td>
+                <td style="text-align:left; padding: 8px 12px; word-break:break-all; max-width:180px;">{{ user.email }}</td>
                 <td style="text-align:center; padding: 8px 12px;">{% if user.is_active %}Active{% else %}Blocked{% endif %}</td>
                 <td style="text-align:center; padding: 8px 12px;"><button onclick="showUserDetails('{{ user.id }}')" style="padding: 4px 12px; border-radius: 6px; border: 1px solid #b0b0b0; background: #f5f7fa; cursor:pointer;">View</button></td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+    </div>
     <div id="overlay" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(220,230,250,0.6); backdrop-filter: blur(4px); z-index:999;"></div>
     <div id="user-popup" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); background:#fff; border-radius:12px; box-shadow:0 4px 24px rgba(0,0,0,0.08); padding:2rem; min-width:360px; z-index:1000;">
         <span id="popup-content"></span>
@@ -107,6 +110,7 @@
             <button onclick="closePopup()" style="padding: 6px 16px; border-radius: 6px; border: 1px solid #b0b0b0; background: #f5f7fa; cursor:pointer;">Close</button>
         </div>
     </div>
+</div>
 </div>
 <script>
 function showUserDetails(userId) {
