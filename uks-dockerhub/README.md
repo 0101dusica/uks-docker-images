@@ -1,78 +1,149 @@
-# UKS DockerHub (Initial Structure)
+# UKS DockerHub
 
-This project is a simplified DockerHub-like web application for managing Docker repositories, following UKS (Software Configuration Management) best practices.
+A simplified DockerHub-like web application for managing Docker repositories and images. Built as a university project for the *Software Configuration Management* course.
 
-## Architecture
+## Tech Stack
 
-- **Backend:** Django + Django REST Framework (serves both API and HTML pages)
-- **Templates:** Django templates (integrated in backend)
-- **Database:** PostgreSQL
-- **Cache:** Redis
-- **Reverse Proxy:** NGINX
-- **Orchestration:** Docker Compose
-- **CI/CD:** Placeholder configuration
+| Layer | Technology |
+|---|---|
+| Backend | Django 4.2+ with Django REST Framework |
+| Templates | Django templates (server-rendered HTML) |
+| Database | PostgreSQL 15 |
+| Cache | Redis 7 |
+| Reverse Proxy | Nginx |
+| Container Registry | Docker Distribution (registry:2) |
+| Log Analytics | Elasticsearch 8 |
+| Orchestration | Docker Compose |
+| CI/CD | GitHub Actions |
 
-All frontend (templates, views, static) is now part of the backend Django app. There is no separate frontend service or container.
+For a full architecture overview with diagrams, see [docs/architecture.md](docs/architecture.md).
 
-## Environment Setup (.env)
+---
 
-Before running the application, you must create a `.env` file in the project root (next to `docker-compose.yml`).
+## Prerequisites
 
-1. Copy the example file:
-   ```sh
-   cp .env.example .env
-   ```
-2. Open `.env` and fill in the required values. Example:
-   ```env
-   POSTGRES_DB=uksdb
-   POSTGRES_USER=uksuser
-   POSTGRES_PASSWORD=strongpassword
-   DJANGO_SECRET_KEY=your-generated-secret-key
-   DEBUG=True
-   ALLOWED_HOSTS=localhost,127.0.0.1
-   REDIS_URL=redis://redis:6379/0
-   ```
-   - `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`: Database name, user, and password (choose your own or use these defaults for development)
-   - `DJANGO_SECRET_KEY`: Generate a secure Django key at https://djecrety.ir/
-   - `DEBUG`: Use `True` for development
-   - `ALLOWED_HOSTS`: Comma-separated list of allowed hosts (e.g. `localhost,127.0.0.1`)
-   - `REDIS_URL`: For Docker, use `redis://redis:6379/0` (replace `redis` if your service is named differently)
+- Docker and Docker Compose installed
+- For pushing images to the local registry: Docker daemon configured to allow insecure registry at `localhost:5000` (see below)
 
-3. Save the file and continue with the standard Docker Compose workflow.
+---
 
-## Local Development (Docker Compose)
+## Quick Start
 
-1. Copy `.env.example` to `.env` and fill in required values.
-2. Start all services (builds images if needed):
-    ```sh
-    docker compose up --build
-    ```
-3. Access the application at http://localhost:8000 (API and HTML pages)
+### 1. Configure environment
 
-### How to Run & Migrate
-
-- To start the application:
-   ```sh
-   docker compose up --build
-   ```
-- If you need to apply Django migrations (after changing models, or first run):
-   ```sh
-   docker compose exec backend python manage.py migrate
-   ```
-
-### Database Initialization
-
-The PostgreSQL database and user are automatically created by Docker using environment variables from your `.env` file. 
-If you want to run custom SQL on first startup (e.g. create tables, seed data), add scripts to:
-
+```sh
+cp .env.example .env
 ```
-docker/postgres/docker-entrypoint-initdb.d/
+
+Edit `.env` and fill in the required values:
+
+```env
+POSTGRES_DB=uksdb
+POSTGRES_USER=uksuser
+POSTGRES_PASSWORD=strongpassword
+DJANGO_SECRET_KEY=your-secret-key-here
 ```
-All `.sql` files in this folder will be executed automatically the first time the container starts (when the database is empty).
 
-## Implemented Endpoints
+Generate a Django secret key with:
+```sh
+python -c "import secrets; print(secrets.token_urlsafe(50))"
+```
 
-- **POST /register/** – User registration endpoint. Allows new users to create an account. Returns basic user info on success.
+### 2. Start the application
 
-For detailed API usage and request/response examples, see `docs/api.md`.
+```sh
+docker compose up --build
+```
 
+The application will be available at **http://localhost**
+
+### 3. First login (Superadmin)
+
+On first startup, a superadmin account is automatically created with a generated password. See [docs/superadmin-setup.md](docs/superadmin-setup.md) for login instructions.
+
+---
+
+## Useful Commands
+
+```sh
+# Run Django tests
+docker compose exec backend python manage.py test --verbosity=2
+
+# Apply migrations
+docker compose exec backend python manage.py migrate
+
+# View application logs
+docker compose logs backend
+
+# Read superadmin initial password
+docker compose exec backend cat superadmin_initial_password.txt
+```
+
+---
+
+## Pushing Docker Images to the Local Registry
+
+The application includes a self-hosted Docker registry on port 5000.
+
+### Configure Docker daemon (one-time setup)
+
+Add `localhost:5000` as an insecure registry in your Docker daemon config (`/etc/docker/daemon.json`):
+
+```json
+{
+  "insecure-registries": ["localhost:5000"]
+}
+```
+
+Then restart Docker:
+```sh
+sudo systemctl restart docker
+```
+
+### Push an image
+
+```sh
+# Tag your image
+docker tag myimage localhost:5000/yourusername/reponame:tagname
+
+# Push to the local registry
+docker push localhost:5000/yourusername/reponame:tagname
+```
+
+The tag will automatically appear in the repository's Tags section in the web UI.
+
+---
+
+## Features
+
+| Feature | Role |
+|---|---|
+| Browse and search public repositories | All users |
+| Register, log in, manage profile | All users |
+| Create, edit, delete repositories (public/private) | Authenticated users |
+| Manage tags (push via Docker CLI or web UI) | Repository owners |
+| Star repositories | Authenticated users |
+| View starred repositories | Authenticated users |
+| Manage users (block/unblock, assign badges) | Admin |
+| Manage official repositories | Admin |
+| Search and analyze system logs (Elasticsearch) | Admin |
+| Create new admins | Superadmin |
+
+---
+
+## CI/CD
+
+| Trigger | Workflow | Actions |
+|---|---|---|
+| Pull request → `develop` or `master` | `ci.yml` | Run all Django tests |
+| Push → `master` | `cd.yml` | Run tests, build Docker image, push to DockerHub, create git tag |
+
+Docker image published to: `0101dusica/uks-dockerhub` on DockerHub.
+
+---
+
+## Documentation
+
+- [docs/architecture.md](docs/architecture.md) — System architecture and diagrams
+- [docs/superadmin-setup.md](docs/superadmin-setup.md) — Superadmin first-login instructions
+- [docs/api.md](docs/api.md) — REST API reference
