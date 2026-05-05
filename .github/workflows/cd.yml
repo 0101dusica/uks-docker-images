@@ -98,10 +98,17 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT }}
 
       - name: Create tag from commit message
         run: |
           COMMIT_MESSAGE=$(git log -1 --format="%s" | tr -cd '[:alnum:]._-' | tr ' ' '_')
+
+          if [ -z "$COMMIT_MESSAGE" ]; then
+            COMMIT_MESSAGE="release-${{ github.sha }}"
+          fi
+
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git tag -a "${COMMIT_MESSAGE}" -m "$(git log -1 --format='%s')"
