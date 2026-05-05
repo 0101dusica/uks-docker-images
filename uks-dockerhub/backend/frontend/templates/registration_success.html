@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Registration Successful — UKSHub{% endblock %}
+{% block content %}
+<div class="page-centered">
+<div class="form-box" style="text-align:center;">
+    <h2>Registration Successful</h2>
+    <p style="color:#555; font-size:0.95rem; margin:1.5rem 0;">
+        Your account has been created successfully.
+    </p>
+    <a href="{% url 'login' %}" class="submit-btn" style="display:inline-block; text-decoration:none; padding:0.65rem 2rem; width:auto;">Sign In</a>
+</div>
+</div>
+{% endblock %}

@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.sqlite3
+.env
+
+# Django
+/static/
+/media/
+
+# VSCode
+.vscode/
+
+
+# Docker
+*.log
+# Do not ignore init scripts for postgres
+!docker/postgres/docker-entrypoint-initdb.d/
+!docker/postgres/docker-entrypoint-initdb.d/*.sql
+
+# Node
+node_modules/
+
+# Superadmin initial password
+superadmin_initial_password.txt
+
+# OS
+.DS_Store
+Thumbs.db

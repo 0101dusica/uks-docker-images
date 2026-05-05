@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Profile — UKSHub{% endblock %}
+{% block extra_head %}
+<style>
+    .badge-tag { font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 600; }
+    .badge-verified, .badge-sponsored { background: #0969da; color: #fff; }
+    .badge-none { background: #e8ecf0; color: #666; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-centered">
+<div class="form-box" style="max-width:520px;">
+    <h2>My Profile</h2>
+
+    {% if success %}
+        <div style="background:#e6f4ea; color:#1a7f37; padding:10px 14px; border-radius:8px; margin-bottom:1rem; font-size:0.9rem;">{{ success }}</div>
+    {% endif %}
+    {% if error %}
+        <div style="background:#ffeaea; color:#dc3545; padding:10px 14px; border-radius:8px; margin-bottom:1rem; font-size:0.9rem;">{{ error }}</div>
+    {% endif %}
+
+    <div style="background:#f4f6f9; border-radius:10px; padding:1rem 1.25rem; margin-bottom:1.5rem; font-size:0.9rem; line-height:1.8;">
+        <div><strong>Username:</strong> {{ user.username }}</div>
+        <div><strong>Role:</strong> <span style="text-transform:capitalize;">{{ user.role }}</span></div>
+        <div>
+            <strong>Badge:</strong>
+            {% if user.badge == 'verified_publisher' %}
+                <span class="badge-tag badge-verified">Verified Publisher</span>
+            {% elif user.badge == 'sponsored_oss' %}
+                <span class="badge-tag badge-sponsored">Sponsored OSS</span>
+            {% else %}
+                <span class="badge-tag badge-none">None</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="first_name">First Name</label>
+            <input type="text" name="first_name" id="first_name" value="{{ user.first_name }}">
+        </div>
+        <div class="form-group">
+            <label for="last_name">Last Name</label>
+            <input type="text" name="last_name" id="last_name" value="{{ user.last_name }}">
+        </div>
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" name="email" id="email" value="{{ user.email }}">
+        </div>
+        <button type="submit" class="submit-btn">Save Changes</button>
+    </form>
+
+    {% if user.role == 'user' %}
+    <div style="display:flex; gap:1rem; justify-content:center; margin-top:1.5rem; font-size:0.9rem;">
+        <a href="{% url 'starred-repos' %}">Starred Repos</a>
+        <a href="{% url 'my-repositories' %}">My Repositories</a>
+    </div>
+    {% endif %}
+</div>
+</div>
+{% endblock %}

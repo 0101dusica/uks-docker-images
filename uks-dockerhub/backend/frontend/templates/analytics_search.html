@@ -1,0 +1,169 @@
+{% extends "base.html" %}
+{% block title %}Analytics — UKSHub{% endblock %}
+{% block extra_head %}
+<style>
+    .stats-row { display: flex; gap: 10px; margin-bottom: 1.5rem; flex-wrap: wrap; }
+    .stat-card {
+        flex: 1; min-width: 100px; background: #fff; border: 1px solid #e2e8f0;
+        border-radius: 10px; padding: 14px 16px; text-align: center;
+    }
+    .stat-number { font-size: 1.6rem; font-weight: 700; line-height: 1.1; }
+    .stat-label { font-size: 0.75rem; color: #888; margin-top: 4px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .stat-card.stat-total   { border-top: 3px solid #0db7ed; }
+    .stat-card.stat-total   .stat-number { color: #1a2636; }
+    .stat-card.stat-info    { border-top: 3px solid #1a7a1a; }
+    .stat-card.stat-info    .stat-number { color: #1a7a1a; }
+    .stat-card.stat-warning { border-top: 3px solid #d97706; }
+    .stat-card.stat-warning .stat-number { color: #d97706; }
+    .stat-card.stat-error   { border-top: 3px solid #dc3545; }
+    .stat-card.stat-error   .stat-number { color: #dc3545; }
+    .stat-card.stat-critical { border-top: 3px solid #7f1d1d; }
+    .stat-card.stat-critical .stat-number { color: #7f1d1d; }
+    .stat-card.stat-debug   { border-top: 3px solid #aaa; }
+    .stat-card.stat-debug   .stat-number { color: #777; }
+
+    .search-card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1.5rem 2rem;
+        margin-bottom: 1.5rem;
+    }
+    .filter-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+    .filter-grid .full-width { grid-column: 1 / -1; }
+
+    .error-banner { background: #ffeaea; border: 1px solid #f5c6c6; border-radius: 8px; padding: 10px 14px; color: #dc3545; margin-bottom: 1rem; font-size: 0.9rem; }
+    .query-error-banner { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 10px 14px; color: #92400e; margin-bottom: 1rem; font-size: 0.9rem; }
+
+    .results-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    .results-table th { text-align: left; padding: 9px 12px; background: #f4f6f9; color: #2d3a4b; font-weight: 700; border-bottom: 2px solid #e2e8f0; white-space: nowrap; }
+    .results-table td { padding: 8px 12px; border-bottom: 1px solid #f0f2f5; vertical-align: top; word-break: break-word; }
+    .results-table tr:hover td { background: #f9fafb; }
+    .level-debug    { color: #888; }
+    .level-info     { color: #1a7a1a; font-weight: 500; }
+    .level-warning  { color: #d97706; font-weight: 600; }
+    .level-error    { color: #dc3545; font-weight: 600; }
+    .level-critical { color: #7f1d1d; font-weight: 700; }
+
+    .section-label { font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #888; margin: 0 0 0.75rem; }
+    .hint { font-size: 0.8rem; color: #888; margin-top: 4px; }
+    .hint code { background: #f0f4f8; padding: 1px 4px; border-radius: 3px; }
+    .total-count { font-size: 0.9rem; color: #555; margin: 1rem 0 0.5rem; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="page-content">
+    <h1 style="margin:0 0 1.5rem; font-size:1.6rem; color:#1a2636;">Analytics Dashboard</h1>
+
+    {% if stats %}
+    <p class="section-label">Log overview</p>
+    <div class="stats-row">
+        <div class="stat-card stat-total">
+            <div class="stat-number">{{ stats.total }}</div>
+            <div class="stat-label">Total</div>
+        </div>
+        <div class="stat-card stat-info">
+            <div class="stat-number">{{ stats.by_level.INFO|default:"0" }}</div>
+            <div class="stat-label">Info</div>
+        </div>
+        <div class="stat-card stat-warning">
+            <div class="stat-number">{{ stats.by_level.WARNING|default:"0" }}</div>
+            <div class="stat-label">Warning</div>
+        </div>
+        <div class="stat-card stat-error">
+            <div class="stat-number">{{ stats.by_level.ERROR|default:"0" }}</div>
+            <div class="stat-label">Error</div>
+        </div>
+        <div class="stat-card stat-critical">
+            <div class="stat-number">{{ stats.by_level.CRITICAL|default:"0" }}</div>
+            <div class="stat-label">Critical</div>
+        </div>
+        <div class="stat-card stat-debug">
+            <div class="stat-number">{{ stats.by_level.DEBUG|default:"0" }}</div>
+            <div class="stat-label">Debug</div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="search-card">
+        <p class="section-label">Search logs</p>
+
+        {% if error %}<div class="error-banner">{{ error }}</div>{% endif %}
+        {% if query_error %}<div class="query-error-banner"><strong>Query syntax error:</strong> {{ query_error }}</div>{% endif %}
+
+        <form method="post" action="{% url 'analytics-search' %}">
+            {% csrf_token %}
+            <div class="filter-grid">
+                <div class="form-group">
+                    <label for="id_date_from">Date from</label>
+                    <input type="datetime-local" id="id_date_from" name="date_from" value="{{ date_from }}" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label for="id_date_to">Date to</label>
+                    <input type="datetime-local" id="id_date_to" name="date_to" value="{{ date_to }}" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label for="id_level">Level</label>
+                    <select id="id_level" name="level" class="form-input">
+                        <option value="" {% if not level %}selected{% endif %}>All levels</option>
+                        {% for lvl in log_levels %}
+                        <option value="{{ lvl }}" {% if level == lvl %}selected{% endif %}>{{ lvl }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="id_text">Text search</label>
+                    <input type="text" id="id_text" name="text" value="{{ text }}" placeholder="Word or phrase in message..." class="form-input">
+                </div>
+                <div class="form-group full-width">
+                    <label for="id_query">Logical query</label>
+                    <input type="text" id="id_query" name="query" value="{{ query }}"
+                           placeholder='e.g. (level = warning OR level = error) AND content CONTAINS "failed"'
+                           class="form-input">
+                    <span class="hint">
+                        Fields: <code>level</code>, <code>message</code>, <code>content</code>, <code>logger</code> &nbsp;|&nbsp;
+                        Operators: <code>AND</code>, <code>OR</code>, <code>NOT</code> &nbsp;|&nbsp;
+                        Comparators: <code>=</code>, <code>CONTAINS</code>
+                    </span>
+                </div>
+            </div>
+            <button type="submit" class="submit-btn" style="max-width:200px;">Search</button>
+        </form>
+    </div>
+
+    {% if searched %}
+        {% if results %}
+            <p class="total-count">
+                Found <strong>{{ total }}</strong> result{{ total|pluralize }}
+                {% if total > 100 %} — showing first 100{% endif %}
+                {% if text or query %} — sorted by relevance{% endif %}
+            </p>
+            <div style="background:#fff; border:1px solid #e2e8f0; border-radius:12px; overflow:hidden;">
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th style="width:160px;">Timestamp</th>
+                            <th style="width:90px;">Level</th>
+                            <th style="width:180px;">Logger</th>
+                            <th>Message</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in results %}
+                        <tr>
+                            <td>{{ row.asctime }}</td>
+                            <td class="level-{{ row.levelname|lower }}">{{ row.levelname }}</td>
+                            <td>{{ row.name }}</td>
+                            <td>{{ row.message }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% elif not error and not query_error %}
+            <div style="text-align:center; color:#888; padding:2rem 0; font-size:0.9rem;">No log entries matched your search criteria.</div>
+        {% endif %}
+    {% endif %}
+</div>
+{% endblock %}
+--
